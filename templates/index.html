@@ -1,46 +1,60 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Міні-аналог Google+ (Стрічка)</title>
+    <title>Mini Google+</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f1f1f1; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; }
         .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        input[type="text"], textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { background: #1a73e8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
         button:hover { background: #1557b0; }
         .post-author { font-weight: bold; color: #202124; }
         .post-time { font-size: 12px; color: #5f6368; float: right; }
         .post-content { margin-top: 10px; color: #3c4043; white-space: pre-wrap; }
+        .user-panel { text-align: right; margin-bottom: 15px; }
+        .user-panel a { text-decoration: none; background: #fff; padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; color: #333; margin-left: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Форма для створення поста -->
-        <div class="card">
-            <h3>Створити публікацію</h3>
-            <form action="/add" method="POST">
-                <label>Ваше ім'я:</label>
-                <input type="text" name="author" placeholder="Введіть ваше ім'я..." required>
-                
-                <label>Повідомлення:</label>
-                <textarea name="content" rows="3" placeholder="Що у вас нового?" required></textarea>
-                
-                <button type="submit">Поділитися</button>
-            </form>
+        <!-- User Panel -->
+        <div class="user-panel">
+            {% if session.get('username') %}
+                <span>Welcome, <b>{{ session['username'] }}</b>!</span>
+                <a href="/logout">Log out</a>
+            {% else %}
+                <a href="/login">Log in</a>
+                <a href="/register">Register</a>
+            {% endif %}
         </div>
 
-        <!-- Стрічка новин -->
-        <h2>Стрічка</h2>
+        <!-- Create Post Form (Only for logged-in users) -->
+        {% if session.get('username') %}
+        <div class="card">
+            <h3>Create a Post</h3>
+            <form action="/add" method="POST">
+                <textarea name="content" rows="3" placeholder="What's new with you?" required></textarea>
+                <button type="submit">Share</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center;">
+            <p>Please <a href="/login">log in</a> or <a href="/register">register</a> to share posts.</p>
+        </div>
+        {% endif %}
+
+        <!-- News Feed -->
+        <h2>Stream</h2>
         {% for post in posts %}
         <div class="card">
-            <span class="post-author">{{ post.author }}</span>
+            <span class="post-author">{{ post.author.username }}</span>
             <span class="post-time">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
             <div class="post-content">{{ post.content }}</div>
         </div>
         {% else %}
-        <p>Поки що немає жодного повідомлення. Станьте першим!</p>
+        <p>No posts yet. Be the first to share something!</p>
         {% endfor %}
     </div>
 </body>
