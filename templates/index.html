@@ -2,14 +2,106 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google+ Revival</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding-bottom: 80px; }
-        header { background: #fff; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100; }
-        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
-        
-        /* Нижній навігаційний бар */
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0; 
+            padding: 0;
+            color: #202124;
+        }
+
+        /* Загальний контейнер сторінки для ПК (розділяє на ліве меню і стрічку) */
+        .app-layout {
+            display: flex;
+            max-width: 1100px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        /* Бічна панель навігації для ПК та планшетів */
+        .sidebar-desktop {
+            display: none; /* Сховано на телефонах */
+            width: 250px;
+            background: #ffffff;
+            border-right: 1px solid #dadce0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 20px 15px;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .sidebar-logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1a73e8;
+            margin-bottom: 30px;
+            padding-left: 10px;
+        }
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #3c4043;
+            font-weight: 500;
+            font-size: 15px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .sidebar-item:hover, .sidebar-item.active {
+            background: #e8f0fe;
+            color: #1a73e8;
+        }
+
+        .sidebar-item svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        /* Основний контент */
+        .main-content {
+            flex-grow: 1;
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px 15px;
+            padding-bottom: 90px; /* Відступ знизу для мобільного бару */
+        }
+
+        /* Шапка тільки для мобільних пристроїв */
+        .mobile-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fff;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #dadce0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* Нижня панель навігації (тільки для телефонів) */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -23,6 +115,7 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
             z-index: 1000;
         }
+        
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -31,42 +124,26 @@
             text-decoration: none;
             color: #9aa0a6;
             font-size: 11px;
-            width: 20%;
+            flex: 1;
             height: 100%;
-            transition: color 0.2s;
         }
-        .nav-item:hover, .nav-item.active {
-            color: #ffffff;
-        }
-        
-        /* Іконка хатинки намальована білим через SVG */
-        .home-icon {
-            width: 24px;
-            height: 24px;
-            fill: currentColor;
-        }
+        .nav-item.active { color: #ffffff; }
+        .home-icon { width: 24px; height: 24px; fill: currentColor; }
 
-        /* Кнопка плюс посередині */
         .nav-plus {
             background: #1a73e8;
             color: white;
-            width: 45px;
-            height: 45px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             box-shadow: 0 4px 8px rgba(26,115,232,0.4);
-            margin-bottom: 5px;
-        }
-        .nav-plus:hover {
-            background: #1557b0;
-            color: white;
         }
 
-        /* Генерація літери для дефолтної аватарки */
         .default-avatar-letter {
             width: 28px;
             height: 28px;
@@ -77,105 +154,141 @@
             font-weight: bold;
             color: white;
             font-size: 14px;
-            background-color: #ea4335; /* Червоний стиль Google */
+            background-color: #ea4335;
         }
 
+        /* Картки дописів */
         .post-card {
             background: #fff;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 18px;
+            border-radius: 12px;
             margin-bottom: 15px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            word-break: break-word;
         }
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .post-username { font-weight: bold; color: #3c4043; }
+        
+        .post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .post-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+        .post-username { font-weight: bold; color: #3c4043; font-size: 15px; }
         .post-time { font-size: 12px; color: #70757a; }
-        .post-content { font-size: 15px; color: #202124; margin-bottom: 10px; }
-        .post-media { width: 100%; border-radius: 8px; max-height: 400px; object-fit: cover; }
+        .post-content { font-size: 15px; color: #202124; margin-bottom: 12px; line-height: 1.5; }
+        .post-media { width: 100%; height: auto; border-radius: 8px; max-height: 450px; object-fit: contain; background: #000; }
+
+        /* Медіа-запити: якщо екран ширший за 768px (планшети та ПК) */
+        @media (min-width: 768px) {
+            .mobile-header { display: none; } /* Ховаємо мобільну шапку */
+            .bottom-nav { display: none; } /* Ховаємо нижній мобільний бар */
+            .sidebar-desktop { display: flex; } /* Показуємо красиву бокову панель ПК */
+            .main-content { 
+                padding: 30px; 
+                padding-bottom: 30px;
+                max-width: 700px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <header>Google+ Feed</header>
+    <!-- Мобільна шапка (видно тільки на телефоні) -->
+    <div class="mobile-header">Google+ Feed</div>
 
-    <div class="container">
-        <!-- Форма створення допису (можна викликати через кнопку або тримати тут) -->
-        <div class="post-card" style="background: #ffffff; border: 1px dashed #dadce0;">
-            <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
-                <textarea name="content" placeholder="What's new in Google+?" style="width: 100%; border: none; resize: none; outline: none; font-size: 14px; font-family: Arial;" rows="3" required></textarea>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                    <input type="file" name="media" accept="image/*,video/*" style="font-size: 12px;">
-                    <button type="submit" style="background: #1a73e8; color: white; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">Post</button>
+    <div class="app-layout">
+        <!-- БОКОВА ПАНЕЛЬ ДЛЯ ПК ТА ПЛАНШЕТІВ -->
+        <nav class="sidebar-desktop">
+            <div>
+                <div class="sidebar-logo">Google+</div>
+                <div class="sidebar-menu">
+                    <a href="{{ url_for('index') }}" class="sidebar-item active">
+                        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                        <span>Home</span>
+                    </a>
+                    <a href="#" class="sidebar-item" onclick="alert('Gadgets news section coming soon!'); return false;">
+                        <span style="font-size: 20px;">📱</span>
+                        <span>Gadgets</span>
+                    </a>
+                    <a href="{{ url_for('friends') }}" class="sidebar-item">
+                        <span style="font-size: 20px;">👭</span>
+                        <span>Friends</span>
+                    </a>
+                    <a href="{{ url_for('profile') }}" class="sidebar-item">
+                        {% if session.get('user_id') %}
+                            {% set uname = session.get('username', 'U') %}
+                            <div class="default-avatar-letter" style="width: 24px; height: 24px; font-size: 12px;">{{ uname[0] | upper }}</div>
+                        {% else %}
+                            <div class="default-avatar-letter" style="width: 24px; height: 24px; font-size: 12px; background: #5f6368;">?</div>
+                        {% endif %}
+                        <span>Profile</span>
+                    </a>
                 </div>
-            </form>
-        </div>
-
-        <!-- Стрічка дописів -->
-        {% for post in posts %}
-            <div class="post-card">
-                <div class="post-header">
-                    {% if post.avatar and post.avatar != 'default.png' %}
-                        <img src="{{ url_for('static', filename='avatars/' + post.avatar) }}" class="post-avatar">
-                    {% else %}
-                        <div class="default-avatar-letter" style="width: 40px; height: 40px; font-size: 18px;">
-                            {{ post.username[0] | upper }}
-                        </div>
-                    {% endif %}
-                    <div>
-                        <div class="post-username">{{ post.username }}</div>
-                        <div class="post-time">{{ post.timestamp }}</div>
-                    </div>
-                </div>
-                <div class="post-content">{{ post.content }}</div>
-                {% if post.media_filename %}
-                    {% if post.media_type == 'image' %}
-                        <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media">
-                    {% elif post.media_type == 'video' %}
-                        <video controls class="post-media">
-                            <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}">
-                        </video>
-                    {% endif %}
-                {% endif %}
             </div>
-        {% endfor %}
+            <div style="font-size: 12px; color: #70757a; padding-left: 10px;">Google+ Revival © 2026</div>
+        </nav>
+
+        <!-- ОСНОВНИЙ КОНТЕНТ (СТРІЧКА ТА ФОРМА) -->
+        <main class="main-content">
+            <!-- Форма створення допису -->
+            <div class="post-card" style="border: 2px dashed #dadce0; background: #ffffff;">
+                <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
+                    <textarea name="content" placeholder="What's new in Google+?" style="width: 100%; border: none; resize: none; outline: none; font-size: 15px; font-family: inherit; background: transparent;" rows="3" required></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px;">
+                        <input type="file" name="media" accept="image/*,video/*" style="font-size: 13px; max-width: 100%;">
+                        <button type="submit" style="background: #1a73e8; color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">Post</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Стрічка дописів -->
+            {% for post in posts %}
+                <div class="post-card">
+                    <div class="post-header">
+                        {% if post.avatar and post.avatar != 'default.png' %}
+                            <img src="{{ url_for('static', filename='avatars/' + post.avatar) }}" class="post-avatar">
+                        {% else %}
+                            <div class="default-avatar-letter" style="width: 42px; height: 42px; font-size: 18px;">
+                                {{ post.username[0] | upper }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <div class="post-username">{{ post.username }}</div>
+                            <div class="post-time">{{ post.timestamp }}</div>
+                        </div>
+                    </div>
+                    <div class="post-content">{{ post.content }}</div>
+                    {% if post.media_filename %}
+                        {% if post.media_type == 'image' %}
+                            <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media">
+                        {% elif post.media_type == 'video' %}
+                            <video controls class="post-media">
+                                <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}">
+                            </video>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </main>
     </div>
 
-    <!-- Нижній панельний бар з 5 кнопками -->
+    <!-- НИЖНІЙ МОБІЛЬНИЙ БАР (видно ТІЛЬКИ на телефонах) -->
     <nav class="bottom-nav">
-        <!-- 1. Головна (Хатинка білим кольором через SVG) -->
         <a href="{{ url_for('index') }}" class="nav-item active">
-            <svg class="home-icon" viewBox="0 0 24 24">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
+            <svg class="home-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>Home</span>
         </a>
-
-        <!-- 2. Гаджети (Іконка телефону) -->
         <a href="#" class="nav-item" onclick="alert('Gadgets news section coming soon!'); return false;">
-            <span style="font-size: 22px;">📱</span>
+            <span style="font-size: 20px;">📱</span>
             <span>Gadgets</span>
         </a>
-
-        <!-- 3. Плюсик (Додати допис) -->
-        <a href="#content" class="nav-item">
+        <a href="#" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;" class="nav-item">
             <div class="nav-plus">+</div>
         </a>
-
-        <!-- 4. Друзі (Іконка 👭) -->
         <a href="{{ url_for('friends') }}" class="nav-item">
-            <span style="font-size: 22px;">👭</span>
+            <span style="font-size: 20px;">👭</span>
             <span>Friends</span>
         </a>
-
-        <!-- 5. Профіль (Динамічна аватарка або літера нікнейму) -->
         <a href="{{ url_for('profile') }}" class="nav-item">
             {% if session.get('user_id') %}
-                {# Отримуємо першу літеру поточного юзера з сесії для генерації аватарки #}
                 {% set uname = session.get('username', 'U') %}
-                <div class="default-avatar-letter">
-                    {{ uname[0] | upper }}
-                </div>
+                <div class="default-avatar-letter">{{ uname[0] | upper }}</div>
             {% else %}
                 <div class="default-avatar-letter" style="background: #5f6368;">?</div>
             {% endif %}
