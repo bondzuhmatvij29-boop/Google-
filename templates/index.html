@@ -20,13 +20,15 @@
         .main-content { flex: 1; width: 100%; }
         .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         
-        textarea, input[type="file"] { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button[type="submit"] { background: #db4437; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; }
+        textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; height: 80px; }
+        input[type="file"] { width: 100%; padding: 6px; margin-bottom: 10px; box-sizing: border-box; }
+        
+        button[type="submit"] { background: #db4437; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
         button[type="submit"]:hover { background: #c53929; }
         
         .post-author { font-weight: bold; color: #202124; }
         .post-time { font-size: 12px; color: #5f6368; float: right; }
-        .post-content { margin-top: 10px; color: #3c4043; white-space: pre-wrap; }
+        .post-content { margin-top: 10px; color: #3c4043; white-space: pre-wrap; word-break: break-word; }
         .post-media { margin-top: 10px; max-width: 100%; border-radius: 4px; }
         
         .file-item { margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 6px; font-size: 13px; }
@@ -59,7 +61,7 @@
             {% if session.get('username') %}
             <form action="/upload_file" method="POST" enctype="multipart/form-data">
                 <input type="file" name="storage_file" required>
-                <button type="submit">Upload</button>
+                <button type="submit">Upload File</button>
             </form>
             <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
             {% endif %}
@@ -78,9 +80,9 @@
             {% if session.get('username') %}
             <div class="card">
                 <form action="/add" method="POST" enctype="multipart/form-data">
-                    <textarea name="content" rows="3"></textarea>
+                    <textarea name="content" placeholder=""></textarea>
                     <input type="file" name="media">
-                    <button type="submit">Share</button>
+                    <button type="submit">Post</button>
                 </form>
             </div>
             {% endif %}
@@ -96,27 +98,4 @@
 
                 {% if post.media_filename %}
                     {% if post.media_type == 'image' %}
-                        <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media">
-                    {% elif post.media_type == 'video' %}
-                        <video controls class="post-media">
-                            <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}">
-                        </video>
-                    {% else %}
-                        <div style="margin-top: 10px;">
-                            <a href="{{ url_for('static', filename='uploads/' + post.media_filename) }}" download style="color: #db4437; text-decoration: none; font-weight: bold;">📎 Download attached file</a>
-                        </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <script>
-        function toggleSidebar() {
-            var sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
-    </script>
-</body>
-</html>
+                        <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post
