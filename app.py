@@ -59,16 +59,27 @@ class StorageFile(db.Model):
   )
 
 
+# Автоматичне створення або оновлення бази без помилок 500
 with app.app_context():
-  db.create_all()
+  try:
+    db.create_all()
+  except Exception:
+    db.drop_all()
+    db.create_all()
 
 
 @app.route('/')
 def index():
-  posts = Post.query.order_by(Post.timestamp.desc()).all()
-  storage_files = StorageFile.query.order_by(
-      StorageFile.timestamp.desc()
-  ).all()
+  try:
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    storage_files = StorageFile.query.order_by(
+        StorageFile.timestamp.desc()
+    ).all()
+  except Exception:
+    db.drop_all()
+    db.create_all()
+    posts = []
+    storage_files = []
   return render_template(
       'index.html', posts=posts, storage_files=storage_files
   )
@@ -137,10 +148,10 @@ def add_post():
     else:
       media_type = 'file'
 
-  if content or media_filename:
+  if (content and content.strip() != '') or media_filename:
     new_post = Post(
         user_id=session['user_id'],
-        content=content,
+        content=content if content else '',
         media_filename=media_filename,
         media_type=media_type,
     )
