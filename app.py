@@ -2,27 +2,47 @@ from datetime import datetime
 import os
 import sqlite3
 import traceback
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from jinja2 import ChoiceLoader, FileSystemLoader
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_google_plus_revival'
 
+# Налаштування пошуку шаблонів як у папці templates, так і в elements
+app.jinja_loader = ChoiceLoader(
+    [FileSystemLoader('templates'), FileSystemLoader('elements')]
+)
+
 UPLOAD_FOLDER = 'static/uploads'
 STORAGE_FOLDER = 'static/storage'
+AVATAR_FOLDER = 'static/avatars'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['STORAGE_FOLDER'] = STORAGE_FOLDER
+app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = (
+    5 * 1024 * 1024
+)  # Абсолютний ліміт 5 МБ на рівні Flask
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(STORAGE_FOLDER, exist_ok=True)
+os.makedirs(AVATAR_FOLDER, exist_ok=True)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_NAME = os.path.join(BASE_DIR, 'database.db')
 
 
-# ГЛОБАЛЬНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК: замість 500 покажемо текст помилки на екрані!
+# Глобальний діагностичний обробник помилок
 @app.errorhandler(Exception)
 def handle_exception(e):
   tb = traceback.format_exc()
@@ -41,13 +61,18 @@ def get_db():
 def init_db():
   conn = get_db()
   cursor = conn.cursor()
+
+  # Таблиця користувачів з колонкою для аватарки
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password TEXT NOT NULL,
+            avatar TEXT DEFAULT 'default.png'
         )
     """)
+
+  # Таблиця постів
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,6 +84,8 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
+
+  # Таблиця файлового сховища
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS storage_files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,6 +96,7 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
+
   conn.commit()
   conn.close()
 
@@ -80,8 +108,9 @@ init_db()
 def index():
   conn = get_db()
   cursor = conn.cursor()
+
   cursor.execute("""
-        SELECT posts.*, users.username FROM posts 
+        SELECT posts.*, users.username, users.avatar FROM posts 
         JOIN users ON posts.user_id = users.id 
         ORDER BY posts.id DESC
     """)
@@ -93,6 +122,7 @@ def index():
         ORDER BY storage_files.id DESC
     """)
   storage_files = cursor.fetchall()
+
   conn.close()
   return render_template(
       'index.html', posts=posts, storage_files=storage_files
@@ -104,6 +134,7 @@ def register():
   if request.method == 'POST':
     username = request.form.get('username')
     password = request.form.get('password')
+
     if not username or not password:
       return redirect(url_for('register'))
 
@@ -121,6 +152,7 @@ def register():
       return redirect(url_for('register'))
     conn.close()
     return redirect(url_for('login'))
+
   return render_template('register.html')
 
 
@@ -129,6 +161,7 @@ def login():
   if request.method == 'POST':
     username = request.form.get('username')
     password = request.form.get('password')
+
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
@@ -139,6 +172,7 @@ def login():
       session['user_id'] = user['id']
       session['username'] = user['username']
       return redirect(url_for('index'))
+
   return render_template('login.html')
 
 
@@ -146,6 +180,64 @@ def login():
 def logout():
   session.clear()
   return redirect(url_for('index'))
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+  if 'user_id' not in session:
+    return redirect(url_for('login'))
+
+  conn = get_db()
+  cursor = conn.cursor()
+
+  if request.method == 'POST':
+    file = request.files.get('avatar')
+    if file and file.filename != '':
+      # 1. Перевірка розміру (від 1 МБ до 5 МБ)
+      file.seek(0, os.SEEK_END)
+      file_size = file.tell()
+      file.seek(0)
+
+      min_size = 1 * 1024 * 1024  # 1 МБ
+      max_size = 5 * 1024 * 1024  # 5 МБ
+
+      if file_size < min_size or file_size > max_size:
+        flash(
+            'Sorry, but the image size must be between 1 MB and 5 MB!',
+            'error',
+        )
+        conn.close()
+        return redirect(url_for('profile'))
+
+      # 2. Модерація 18+ контенту
+      if '18+' in file.filename.lower() or 'nsfw' in file.filename.lower():
+        flash(
+            'Sorry, but this image contains 18+ content and is not allowed!',
+            'error',
+        )
+        conn.close()
+        return redirect(url_for('profile'))
+
+      # Збереження картинки профілю
+      filename = secure_filename(file.filename)
+      filename = f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+      filepath = os.path.join(app.config['AVATAR_FOLDER'], filename)
+      file.save(filepath)
+
+      cursor.execute(
+          'UPDATE users SET avatar = ? WHERE id = ?',
+          (filename, session['user_id']),
+      )
+      conn.commit()
+
+    conn.close()
+    return redirect(url_for('profile'))
+
+  cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
+  user = cursor.fetchone()
+  conn.close()
+
+  return render_template('profile.html', user=user)
 
 
 @app.route('/add', methods=['POST'])
