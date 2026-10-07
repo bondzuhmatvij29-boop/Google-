@@ -5,57 +5,115 @@
     <title>Mini Google+</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f1f1f1; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
+        .wrapper { max-width: 900px; margin: 0 auto; display: flex; gap: 20px; }
+        .sidebar { width: 300px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
+        .main-content { flex: 1; }
         .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #1a73e8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+        textarea, input[type="file"] { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #1a73e8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; }
         button:hover { background: #1557b0; }
         .post-author { font-weight: bold; color: #202124; }
         .post-time { font-size: 12px; color: #5f6368; float: right; }
         .post-content { margin-top: 10px; color: #3c4043; white-space: pre-wrap; }
+        .post-media { margin-top: 10px; max-width: 100%; border-radius: 4px; }
         .user-panel { text-align: right; margin-bottom: 15px; }
-        .user-panel a { text-decoration: none; background: #fff; padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; color: #333; margin-left: 5px; }
+        .user-panel a { text-decoration: none; background: #fff; padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; color: #333; margin-left: 5px; font-size: 14px; }
+        .music-item { margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .music-title { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; word-break: break-all; }
+        audio { width: 100%; height: 32px; margin-top: 4px; }
+        .flash-error { color: red; font-size: 12px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- User Panel -->
-        <div class="user-panel">
+    <div class="wrapper">
+        <!-- Sidebar: Music & Info -->
+        <div class="sidebar">
+            <h3>🎵 Music Library</h3>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-error">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             {% if session.get('username') %}
-                <span>Welcome, <b>{{ session['username'] }}</b>!</span>
-                <a href="/logout">Log out</a>
-            {% else %}
-                <a href="/login">Log in</a>
-                <a href="/register">Register</a>
-            {% endif %}
-        </div>
-
-        <!-- Create Post Form (Only for logged-in users) -->
-        {% if session.get('username') %}
-        <div class="card">
-            <h3>Create a Post</h3>
-            <form action="/add" method="POST">
-                <textarea name="content" rows="3" placeholder="What's new with you?" required></textarea>
-                <button type="submit">Share</button>
+            <form action="/upload_music" method="POST" enctype="multipart/form-data">
+                <label style="font-size: 13px;">Upload track (MP3, WAV, AAC):</label>
+                <input type="file" name="music_file" accept=".mp3,.wma,.aac,.wav,.m4a" required>
+                <button type="submit">Upload Audio</button>
             </form>
-        </div>
-        {% else %}
-        <div class="card" style="text-align: center;">
-            <p>Please <a href="/login">log in</a> or <a href="/register">register</a> to share posts.</p>
-        </div>
-        {% endif %}
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+            {% endif %}
 
-        <!-- News Feed -->
-        <h2>Stream</h2>
-        {% for post in posts %}
-        <div class="card">
-            <span class="post-author">{{ post.author.username }}</span>
-            <span class="post-time">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-            <div class="post-content">{{ post.content }}</div>
+            <div class="music-list">
+                {% for track in music_tracks %}
+                <div class="music-item">
+                    <div class="music-title">{{ track.original_filename }} <span style="font-weight:normal; color:#77; font-size:11px;">by {{ track.uploader.username }}</span></div>
+                    <audio controls>
+                        <source src="{{ url_for('static', filename='music/' + track.filename) }}">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+                {% else %}
+                <p style="font-size: 13px; color: #666;">No music tracks available yet.</p>
+                {% endfor %}
+            </div>
         </div>
-        {% else %}
-        <p>No posts yet. Be the first to share something!</p>
-        {% endfor %}
+
+        <!-- Main Feed & Post Creation -->
+        <div class="main-content">
+            <div class="user-panel">
+                {% if session.get('username') %}
+                    <span>Welcome, <b>{{ session['username'] }}</b>!</span>
+                    <a href="/logout">Log out</a>
+                {% else %}
+                    <a href="/login">Log in</a>
+                    <a href="/register">Register</a>
+                {% endif %}
+            </div>
+
+            {% if session.get('username') %}
+            <div class="card">
+                <h3>Create a Post</h3>
+                <form action="/add" method="POST" enctype="multipart/form-data">
+                    <textarea name="content" rows="3" placeholder="What's new with you?"></textarea>
+                    <label style="font-size: 13px; color: #555;">Attach photo or video:</label>
+                    <input type="file" name="media" accept="image/*,video/*" style="margin-bottom: 10px;">
+                    <button type="submit">Share</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="card" style="text-align: center;">
+                <p>Please <a href="/login">log in</a> or <a href="/register">register</a> to share posts and music.</p>
+            </div>
+            {% endif %}
+
+            <h2>Stream</h2>
+            {% for post in posts %}
+            <div class="card">
+                <span class="post-author">{{ post.author.username }}</span>
+                <span class="post-time">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                
+                {% if post.content %}
+                <div class="post-content">{{ post.content }}</div>
+                {% endif %}
+
+                {% if post.media_filename %}
+                    {% if post.media_type == 'image' %}
+                        <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media" alt="Post image">
+                    {% elif post.media_type == 'video' %}
+                        <video controls class="post-media">
+                            <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% else %}
+            <p>No posts yet. Be the first to share something!</p>
+            {% endfor %}
+        </div>
     </div>
 </body>
 </html>
