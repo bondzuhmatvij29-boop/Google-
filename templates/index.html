@@ -89,8 +89,8 @@
 
             {% for post in posts %}
             <div class="card">
-                <span class="post-author">{{ post.author.username }}</span>
-                <span class="post-time">{{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span class="post-author">{{ post.username }}</span>
+                <span class="post-time">{{ post.timestamp }}</span>
                 
                 {% if post.content %}
                 <div class="post-content">{{ post.content }}</div>
@@ -98,4 +98,12 @@
 
                 {% if post.media_filename %}
                     {% if post.media_type == 'image' %}
-                        <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post
+                        <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="Image" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">
+                    {% elif post.media_type == 'video' %}
+                        <video controls style="max-width: 100%; border-radius: 8px; margin-top: 10px;">
+                            <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" type="video/mp4">
+                        </video>
+                    {% endif %}
+                {% endif %}
+            </div>
+{% endfor %}
