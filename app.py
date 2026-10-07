@@ -87,28 +87,32 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-  try:
-    if request.method == 'POST':
+  if request.method == 'POST':
+    try:
       username = request.form.get('username')
       password = request.form.get('password')
+
+      if not username or not password:
+        return redirect(url_for('register'))
 
       if User.query.filter_by(username=username).first():
         return redirect(url_for('register'))
 
-      hashed_password = generate_password_hash(password, method='scrypt')
+      # Використовуємо стандартний метод хешування без екзотичних параметрів
+      hashed_password = generate_password_hash(password)
       new_user = User(username=username, password=hashed_password)
       db.session.add(new_user)
       db.session.commit()
       return redirect(url_for('login'))
-  except Exception as e:
-    print('Register Error:', traceback.format_exc())
+    except Exception as e:
+      print('Register Error:', traceback.format_exc())
   return render_template('register.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-  try:
-    if request.method == 'POST':
+  if request.method == 'POST':
+    try:
       username = request.form.get('username')
       password = request.form.get('password')
 
@@ -117,8 +121,8 @@ def login():
         session['user_id'] = user.id
         session['username'] = user.username
         return redirect(url_for('index'))
-  except Exception as e:
-    print('Login Error:', traceback.format_exc())
+    except Exception as e:
+      print('Login Error:', traceback.format_exc())
   return render_template('login.html')
 
 
