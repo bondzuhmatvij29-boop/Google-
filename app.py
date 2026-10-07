@@ -7,11 +7,13 @@ from flask import (
     flash,
     redirect,
     render_template,
+    render_template_string,
     request,
     session,
     url_for,
 )
 from jinja2 import ChoiceLoader, FileSystemLoader
+from jinja2.exceptions import TemplateNotFound
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -35,14 +37,25 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Ліміт файлів 5 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(STORAGE_FOLDER, exist_ok=True)
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
+os.makedirs('templates', exist_ok=True)
+os.makedirs('elements', exist_ok=True)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_NAME = os.path.join(BASE_DIR, 'database.db')
 
 
-# Глобальний перехоплювач помилок (діагностика 500)
+# Глобальний перехоплювач помилок із захистом від падіння та виведенням точної причини
 @app.errorhandler(Exception)
 def handle_exception(e):
+  # Якщо помилка пов'язана з відсутністю шаблону Jinja
+  if isinstance(e, TemplateNotFound):
+    return (
+        f'<h2 style="color: red;">Помилка відсутності шаблону (TemplateNotFound):</h2>'
+        f'<p>Файл шаблону <b>{e.name}</b> не знайдено у папках <code>templates</code> або <code>elements</code>.</p>'
+        f'<p>Перевір, чи створені всі необхідні файли HTML.</p>',
+        500,
+    )
+
   tb = traceback.format_exc()
   return (
       f'<h2>CRITICAL SERVER ERROR (500):</h2><pre>{tb}</pre>',
@@ -60,7 +73,6 @@ def init_db():
   conn = get_db()
   cursor = conn.cursor()
 
-  # Таблиця користувачів з аватарками
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +82,6 @@ def init_db():
         )
     """)
 
-  # Таблиця постів стрічки
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,7 +94,6 @@ def init_db():
         )
     """)
 
-  # Таблиця файлового сховища
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS storage_files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,7 +105,6 @@ def init_db():
         )
     """)
 
-  # Таблиця запитів на дружбу
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS friend_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,7 +115,6 @@ def init_db():
         )
     """)
 
-  # Таблиця офіційних друзів
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS friendships (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -213,7 +221,6 @@ def profile():
   if request.method == 'POST':
     file = request.files.get('avatar')
     if file and file.filename != '':
-      # Перевірка розміру (від 1 МБ до 5 МБ)
       file.seek(0, os.SEEK_END)
       file_size = file.tell()
       file.seek(0)
@@ -229,7 +236,6 @@ def profile():
         conn.close()
         return redirect(url_for('profile'))
 
-      # Модерація 18+ контенту
       if '18+' in file.filename.lower() or 'nsfw' in file.filename.lower():
         flash(
             'Sorry, but this image contains 18+ content and is not allowed!',
@@ -307,7 +313,6 @@ def friends():
           conn.commit()
           return redirect(url_for('friends'))
 
-  # Отримуємо список друзів
   cursor.execute(
       """
         SELECT users.id, users.username, users.avatar FROM friendships
@@ -318,7 +323,6 @@ def friends():
   )
   my_friends = cursor.fetchall()
 
-  # Отримуємо вхідні запити
   cursor.execute(
       """
         SELECT friend_requests.id as req_id, users.id as sender_id, users.username, users.avatar FROM friend_requests
@@ -345,7 +349,6 @@ def accept_friend(sender_id):
 
   conn = get_db()
   cursor = conn.cursor()
-
   cursor.execute(
       'DELETE FROM friend_requests WHERE sender_id = ? AND receiver_id = ?',
       (sender_id, session['user_id']),
@@ -358,7 +361,6 @@ def accept_friend(sender_id):
       'INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)',
       (sender_id, session['user_id']),
   )
-
   conn.commit()
   conn.close()
   return redirect(url_for('friends'))
@@ -436,34 +438,6 @@ def add_post():
             media_type,
             timestamp,
         ),
-    )
-    conn.commit()
-    conn.close()
-
-  return redirect(url_for('index'))
-
-
-@app.route('/upload_file', methods=['POST'])
-def upload_file():
-  if 'user_id' not in session:
-    return redirect(url_for('login'))
-
-  file = request.files.get('storage_file')
-  if file and file.filename != '':
-    original_name = file.filename
-    filename = secure_filename(original_name)
-    filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-    file.save(os.path.join(app.config['STORAGE_FOLDER'], filename))
-
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-            INSERT INTO storage_files (user_id, filename, original_filename, timestamp) 
-            VALUES (?, ?, ?, ?)
-        """,
-        (session['user_id'], filename, original_name, timestamp),
     )
     conn.commit()
     conn.close()
