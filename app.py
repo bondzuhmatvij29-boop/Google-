@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import traceback
 from flask import (
     Flask,
     flash,
@@ -59,11 +60,11 @@ class StorageFile(db.Model):
   )
 
 
-# Автоматичне створення або оновлення бази без помилок 500
 with app.app_context():
   try:
     db.create_all()
-  except Exception:
+  except Exception as e:
+    print('DB Init Error:', e)
     db.drop_all()
     db.create_all()
 
@@ -75,9 +76,8 @@ def index():
     storage_files = StorageFile.query.order_by(
         StorageFile.timestamp.desc()
     ).all()
-  except Exception:
-    db.drop_all()
-    db.create_all()
+  except Exception as e:
+    print('Index Error:', e)
     posts = []
     storage_files = []
   return render_template(
@@ -87,34 +87,38 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-  if request.method == 'POST':
-    username = request.form.get('username')
-    password = request.form.get('password')
+  try:
+    if request.method == 'POST':
+      username = request.form.get('username')
+      password = request.form.get('password')
 
-    if User.query.filter_by(username=username).first():
-      return redirect(url_for('register'))
+      if User.query.filter_by(username=username).first():
+        return redirect(url_for('register'))
 
-    hashed_password = generate_password_hash(password, method='scrypt')
-    new_user = User(username=username, password=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
-    return redirect(url_for('login'))
-
+      hashed_password = generate_password_hash(password, method='scrypt')
+      new_user = User(username=username, password=hashed_password)
+      db.session.add(new_user)
+      db.session.commit()
+      return redirect(url_for('login'))
+  except Exception as e:
+    print('Register Error:', traceback.format_exc())
   return render_template('register.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-  if request.method == 'POST':
-    username = request.form.get('username')
-    password = request.form.get('password')
+  try:
+    if request.method == 'POST':
+      username = request.form.get('username')
+      password = request.form.get('password')
 
-    user = User.query.filter_by(username=username).first()
-    if user and check_password_hash(user.password, password):
-      session['user_id'] = user.id
-      session['username'] = user.username
-      return redirect(url_for('index'))
-
+      user = User.query.filter_by(username=username).first()
+      if user and check_password_hash(user.password, password):
+        session['user_id'] = user.id
+        session['username'] = user.username
+        return redirect(url_for('index'))
+  except Exception as e:
+    print('Login Error:', traceback.format_exc())
   return render_template('login.html')
 
 
@@ -129,34 +133,37 @@ def add_post():
   if 'user_id' not in session:
     return redirect(url_for('login'))
 
-  content = request.form.get('content')
-  file = request.files.get('media')
-  media_filename = None
-  media_type = None
+  try:
+    content = request.form.get('content')
+    file = request.files.get('media')
+    media_filename = None
+    media_type = None
 
-  if file and file.filename != '':
-    filename = secure_filename(file.filename)
-    filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-    media_filename = filename
+    if file and file.filename != '':
+      filename = secure_filename(file.filename)
+      filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+      file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+      media_filename = filename
 
-    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
-      media_type = 'image'
-    elif ext in {'mp4', 'webm', 'ogg', 'mov'}:
-      media_type = 'video'
-    else:
-      media_type = 'file'
+      ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+      if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+        media_type = 'image'
+      elif ext in {'mp4', 'webm', 'ogg', 'mov'}:
+        media_type = 'video'
+      else:
+        media_type = 'file'
 
-  if (content and content.strip() != '') or media_filename:
-    new_post = Post(
-        user_id=session['user_id'],
-        content=content if content else '',
-        media_filename=media_filename,
-        media_type=media_type,
-    )
-    db.session.add(new_post)
-    db.session.commit()
+    if (content and content.strip() != '') or media_filename:
+      new_post = Post(
+          user_id=session['user_id'],
+          content=content if content else '',
+          media_filename=media_filename,
+          media_type=media_type,
+      )
+      db.session.add(new_post)
+      db.session.commit()
+  except Exception as e:
+    print('Add Post Error:', traceback.format_exc())
 
   return redirect(url_for('index'))
 
@@ -166,20 +173,23 @@ def upload_file():
   if 'user_id' not in session:
     return redirect(url_for('login'))
 
-  file = request.files.get('storage_file')
-  if file and file.filename != '':
-    original_name = file.filename
-    filename = secure_filename(original_name)
-    filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-    file.save(os.path.join(app.config['STORAGE_FOLDER'], filename))
+  try:
+    file = request.files.get('storage_file')
+    if file and file.filename != '':
+      original_name = file.filename
+      filename = secure_filename(original_name)
+      filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+      file.save(os.path.join(app.config['STORAGE_FOLDER'], filename))
 
-    new_file = StorageFile(
-        user_id=session['user_id'],
-        filename=filename,
-        original_filename=original_name,
-    )
-    db.session.add(new_file)
-    db.session.commit()
+      new_file = StorageFile(
+          user_id=session['user_id'],
+          filename=filename,
+          original_filename=original_name,
+      )
+      db.session.add(new_file)
+      db.session.commit()
+  except Exception as e:
+    print('Upload File Error:', traceback.format_exc())
 
   return redirect(url_for('index'))
 
