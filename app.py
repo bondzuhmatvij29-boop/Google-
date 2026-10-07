@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import sqlite3
+import traceback
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
@@ -8,7 +9,6 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_google_plus_revival'
 
-# Папки для медіа та файлів (створюються автоматично або використовуються поточні)
 UPLOAD_FOLDER = 'static/uploads'
 STORAGE_FOLDER = 'static/storage'
 
@@ -18,9 +18,18 @@ app.config['STORAGE_FOLDER'] = STORAGE_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(STORAGE_FOLDER, exist_ok=True)
 
-# ВИКОРИСТОВУЄМО АБСОЛЮТНИЙ ШЛЯХ ДО ПАПКИ З app.py
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_NAME = os.path.join(BASE_DIR, 'database.db')
+
+
+# ГЛОБАЛЬНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК: замість 500 покажемо текст помилки на екрані!
+@app.errorhandler(Exception)
+def handle_exception(e):
+  tb = traceback.format_exc()
+  return (
+      f'<h2>CRITICAL SERVER ERROR (500):</h2><pre>{tb}</pre>',
+      500,
+  )
 
 
 def get_db():
@@ -32,7 +41,6 @@ def get_db():
 def init_db():
   conn = get_db()
   cursor = conn.cursor()
-
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,7 +48,6 @@ def init_db():
             password TEXT NOT NULL
         )
     """)
-
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +59,6 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
-
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS storage_files (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,12 +69,10 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id)
         )
     """)
-
   conn.commit()
   conn.close()
 
 
-# Ініціалізація бази при запуску
 init_db()
 
 
@@ -76,7 +80,6 @@ init_db()
 def index():
   conn = get_db()
   cursor = conn.cursor()
-
   cursor.execute("""
         SELECT posts.*, users.username FROM posts 
         JOIN users ON posts.user_id = users.id 
@@ -90,7 +93,6 @@ def index():
         ORDER BY storage_files.id DESC
     """)
   storage_files = cursor.fetchall()
-
   conn.close()
   return render_template(
       'index.html', posts=posts, storage_files=storage_files
@@ -102,7 +104,6 @@ def register():
   if request.method == 'POST':
     username = request.form.get('username')
     password = request.form.get('password')
-
     if not username or not password:
       return redirect(url_for('register'))
 
@@ -120,7 +121,6 @@ def register():
       return redirect(url_for('register'))
     conn.close()
     return redirect(url_for('login'))
-
   return render_template('register.html')
 
 
@@ -129,7 +129,6 @@ def login():
   if request.method == 'POST':
     username = request.form.get('username')
     password = request.form.get('password')
-
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
@@ -140,7 +139,6 @@ def login():
       session['user_id'] = user['id']
       session['username'] = user['username']
       return redirect(url_for('index'))
-
   return render_template('login.html')
 
 
