@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - Mini Google+</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f1f1f1; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 300px; }
+        input { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #1a73e8; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1557b0; }
+        .error { color: red; font-size: 14px; margin-bottom: 10px; }
+        .link { text-align: center; margin-top: 10px; font-size: 14px; }
+        .link a { text-decoration: none; color: #1a73e8; }
+        .link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3>Create Account</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="error">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label>Username:</label>
+            <input type="text" name="username" required>
+            
+            <label>Password:</label>
+            <input type="password" name="password" required>
+            
+            <button type="submit">Sign Up</button>
+        </form>
+        <div class="link">
+            <a href="/login">Already have an account? Log in</a>
+        </div>
+    </div>
+</body>
+</html>
