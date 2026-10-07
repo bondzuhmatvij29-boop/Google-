@@ -18,7 +18,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_google_plus_revival'
 
-# Налаштування пошуку шаблонів як у папці templates, так і в elements
+# Налаштування пошуку шаблонів: папка templates + коренева папка elements
 app.jinja_loader = ChoiceLoader(
     [FileSystemLoader('templates'), FileSystemLoader('elements')]
 )
@@ -30,9 +30,7 @@ AVATAR_FOLDER = 'static/avatars'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['STORAGE_FOLDER'] = STORAGE_FOLDER
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = (
-    5 * 1024 * 1024
-)  # Абсолютний ліміт 5 МБ на рівні Flask
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Ліміт файлів 5 МБ
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(STORAGE_FOLDER, exist_ok=True)
@@ -42,7 +40,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_NAME = os.path.join(BASE_DIR, 'database.db')
 
 
-# Глобальний діагностичний обробник помилок
+# Глобальний перехоплювач помилок (діагностика 500)
 @app.errorhandler(Exception)
 def handle_exception(e):
   tb = traceback.format_exc()
@@ -62,7 +60,7 @@ def init_db():
   conn = get_db()
   cursor = conn.cursor()
 
-  # Таблиця користувачів з колонкою для аватарки
+  # Таблиця користувачів з аватарками
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +70,7 @@ def init_db():
         )
     """)
 
-  # Таблиця постів
+  # Таблиця постів стрічки
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,6 +92,28 @@ def init_db():
             original_filename TEXT NOT NULL,
             timestamp TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+
+  # Таблиця запитів на дружбу
+  cursor.execute("""
+        CREATE TABLE IF NOT EXISTS friend_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_id INTEGER NOT NULL,
+            receiver_id INTEGER NOT NULL,
+            FOREIGN KEY(sender_id) REFERENCES users(id),
+            FOREIGN KEY(receiver_id) REFERENCES users(id)
+        )
+    """)
+
+  # Таблиця офіційних друзів
+  cursor.execute("""
+        CREATE TABLE IF NOT EXISTS friendships (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            friend_id INTEGER NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(friend_id) REFERENCES users(id)
         )
     """)
 
@@ -193,13 +213,13 @@ def profile():
   if request.method == 'POST':
     file = request.files.get('avatar')
     if file and file.filename != '':
-      # 1. Перевірка розміру (від 1 МБ до 5 МБ)
+      # Перевірка розміру (від 1 МБ до 5 МБ)
       file.seek(0, os.SEEK_END)
       file_size = file.tell()
       file.seek(0)
 
-      min_size = 1 * 1024 * 1024  # 1 МБ
-      max_size = 5 * 1024 * 1024  # 5 МБ
+      min_size = 1 * 1024 * 1024
+      max_size = 5 * 1024 * 1024
 
       if file_size < min_size or file_size > max_size:
         flash(
@@ -209,7 +229,7 @@ def profile():
         conn.close()
         return redirect(url_for('profile'))
 
-      # 2. Модерація 18+ контенту
+      # Модерація 18+ контенту
       if '18+' in file.filename.lower() or 'nsfw' in file.filename.lower():
         flash(
             'Sorry, but this image contains 18+ content and is not allowed!',
@@ -218,7 +238,6 @@ def profile():
         conn.close()
         return redirect(url_for('profile'))
 
-      # Збереження картинки профілю
       filename = secure_filename(file.filename)
       filename = f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
       filepath = os.path.join(app.config['AVATAR_FOLDER'], filename)
@@ -238,6 +257,143 @@ def profile():
   conn.close()
 
   return render_template('profile.html', user=user)
+
+
+@app.route('/friends', methods=['GET', 'POST'])
+def friends():
+  if 'user_id' not in session:
+    return redirect(url_for('login'))
+
+  conn = get_db()
+  cursor = conn.cursor()
+  error_msg = None
+
+  if request.method == 'POST':
+    target_username = request.form.get('username', '').strip()
+    if target_username:
+      cursor.execute(
+          'SELECT id FROM users WHERE username = ?', (target_username,)
+      )
+      target_user = cursor.fetchone()
+
+      if not target_user:
+        error_msg = f"User '{target_username}' not found."
+      elif target_user['id'] == session['user_id']:
+        error_msg = 'You cannot add yourself as a friend.'
+      else:
+        target_id = target_user['id']
+
+        cursor.execute(
+            'SELECT * FROM friendships WHERE user_id = ? AND friend_id = ?',
+            (session['user_id'], target_id),
+        )
+        already_friends = cursor.fetchone()
+
+        cursor.execute(
+            'SELECT * FROM friend_requests WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)',
+            (session['user_id'], target_id, target_id, session['user_id']),
+        )
+        existing_req = cursor.fetchone()
+
+        if already_friends:
+          error_msg = 'You are already friends with this user.'
+        elif existing_req:
+          error_msg = 'Friend request already sent or pending.'
+        else:
+          cursor.execute(
+              'INSERT INTO friend_requests (sender_id, receiver_id) VALUES (?, ?)',
+              (session['user_id'], target_id),
+          )
+          conn.commit()
+          return redirect(url_for('friends'))
+
+  # Отримуємо список друзів
+  cursor.execute(
+      """
+        SELECT users.id, users.username, users.avatar FROM friendships
+        JOIN users ON friendships.friend_id = users.id
+        WHERE friendships.user_id = ?
+    """,
+      (session['user_id'],),
+  )
+  my_friends = cursor.fetchall()
+
+  # Отримуємо вхідні запити
+  cursor.execute(
+      """
+        SELECT friend_requests.id as req_id, users.id as sender_id, users.username, users.avatar FROM friend_requests
+        JOIN users ON friend_requests.sender_id = users.id
+        WHERE friend_requests.receiver_id = ?
+    """,
+      (session['user_id'],),
+  )
+  incoming_requests = cursor.fetchall()
+
+  conn.close()
+  return render_template(
+      'friends.html',
+      my_friends=my_friends,
+      incoming_requests=incoming_requests,
+      error_msg=error_msg,
+  )
+
+
+@app.route('/accept_friend/<int:sender_id>')
+def accept_friend(sender_id):
+  if 'user_id' not in session:
+    return redirect(url_for('login'))
+
+  conn = get_db()
+  cursor = conn.cursor()
+
+  cursor.execute(
+      'DELETE FROM friend_requests WHERE sender_id = ? AND receiver_id = ?',
+      (sender_id, session['user_id']),
+  )
+  cursor.execute(
+      'INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)',
+      (session['user_id'], sender_id),
+  )
+  cursor.execute(
+      'INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)',
+      (sender_id, session['user_id']),
+  )
+
+  conn.commit()
+  conn.close()
+  return redirect(url_for('friends'))
+
+
+@app.route('/reject_friend/<int:sender_id>')
+def reject_friend(sender_id):
+  if 'user_id' not in session:
+    return redirect(url_for('login'))
+
+  conn = get_db()
+  cursor = conn.cursor()
+  cursor.execute(
+      'DELETE FROM friend_requests WHERE sender_id = ? AND receiver_id = ?',
+      (sender_id, session['user_id']),
+  )
+  conn.commit()
+  conn.close()
+  return redirect(url_for('friends'))
+
+
+@app.route('/remove_friend/<int:friend_id>')
+def remove_friend(friend_id):
+  if 'user_id' not in session:
+    return redirect(url_for('login'))
+
+  conn = get_db()
+  cursor = conn.cursor()
+  cursor.execute(
+      'DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)',
+      (session['user_id'], friend_id, friend_id, session['user_id']),
+  )
+  conn.commit()
+  conn.close()
+  return redirect(url_for('friends'))
 
 
 @app.route('/add', methods=['POST'])
