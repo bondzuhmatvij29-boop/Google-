@@ -1,92 +1,243 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Google+ - Home</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
+            background-color: #e5e5e5; 
+            margin: 0; 
+            padding: 0;
+            padding-bottom: 70px; /* Відступ для нижньої панелі на телефонах */
+        }
+        header { 
+            background: #d32f2f; 
+            color: white;
+            padding: 12px 16px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+        }
+        .logo { font-size: 20px; font-weight: 500; color: white; text-decoration: none; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 12px; font-size: 14px; font-weight: 500; }
+        
+        .container { 
+            max-width: 600px; 
+            width: 100%;
+            margin: 15px auto; 
+            padding: 0 12px; 
+        }
+        
+        .card {
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            margin-bottom: 15px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+        textarea:focus { border-color: #d32f2f; }
+        
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #c62828; }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .post-author { font-weight: bold; color: #202124; font-size: 15px; }
+        .post-time { font-size: 12px; color: #5f6368; margin-left: 8px; }
+        .post-content { font-size: 14px; color: #202124; line-height: 1.4; word-break: break-word; }
+        
+        .post-media {
+            margin-top: 10px;
+            max-width: 100%;
+            border-radius: 4px;
+            max-height: 400px;
+            object-fit: contain;
+        }
+        
+        .media-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: #1a73e8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .media-link:hover { text-decoration: underline; }
+
+        /* Нижня панель навігації для мобільних */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 56px;
+            background: #212121;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #9e9e9e;
+            font-size: 10px;
+            flex: 1;
+            height: 100%;
+        }
+        .nav-item.active { color: #ffffff; }
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+        /* Адаптивність для планшетів та ПК */
+        @media (min-width: 768px) {
+            body { background-color: #f0f2f5; }
+            .container { max-width: 650px; margin: 25px auto; }
+            header { max-width: 650px; margin: 0 auto; border-radius: 0 0 8px 8px; }
+            .bottom-nav { 
+                max-width: 550px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                bottom: 15px; 
+                border-radius: 28px; 
+            }
+        }
+    </style>
 </head>
-<body bgcolor="#e5e5e5" text="#000000">
+<body>
 
-    <!-- Верхня панель навігації -->
-    <table width="100%" bgcolor="#d32f2f" border="0" cellpadding="8" cellspacing="0">
-        <tr>
-            <td>
-                <font face="Arial, sans-serif" size="4" color="#ffffff"><b>Google+</b></font>
-            </td>
-            <td align="right">
-                <font face="Arial, sans-serif" size="2">
-                    {% if session.user_id %}
-                        <a href="{{ url_for('profile') }}"><font color="#ffffff"><b>Profile</b></font></a> | 
-                        <a href="{{ url_for('friends') }}"><font color="#ffffff"><b>Friends</b></font></a> | 
-                        <a href="{{ url_for('logout') }}"><font color="#ffffff"><b>Logout</b></font></a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}"><font color="#ffffff"><b>Login</b></font></a> | 
-                        <a href="{{ url_for('register') }}"><font color="#ffffff"><b>Register</b></font></a>
-                    {% endif %}
-                </font>
-            </td>
-        </tr>
-    </table>
+    <header>
+        <a href="{{ url_for('index') }}" class="logo">Google+</a>
+        <div class="nav-links">
+            {% if session.user_id %}
+                <a href="{{ url_for('profile') }}">Profile</a>
+                <a href="{{ url_for('friends') }}">Friends</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('register') }}">Register</a>
+            {% endif %}
+        </div>
+    </header>
 
-    <br>
-    <center>
-        <table width="90%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-                <td valign="top">
-                    
-                    {% if session.user_id %}
-                    <!-- Форма створення поста -->
-                    <table width="100%" border="1" bordercolor="#cccccc" bgcolor="#ffffff" cellpadding="10" cellspacing="0">
-                        <tr>
-                            <td>
-                                <font face="Arial, sans-serif" size="3"><b>Share what's new...</b></font>
-                                <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
-                                    <br>
-                                    <textarea name="content" rows="3" cols="40"></textarea><br><br>
-                                    <font face="Arial, sans-serif" size="2">Attach file: <input type="file" name="media"></font><br><br>
-                                    <input type="submit" value="Post">
-                                </form>
-                            </td>
-                        </tr>
-                    </table>
-                    <br>
-                    {% endif %}
+    <div class="container">
+        
+        {% if session.user_id %}
+        <!-- Форма створення поста -->
+        <div class="card">
+            <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
+                <textarea name="content" rows="3" placeholder="Share what's new..."></textarea>
+                <div class="form-footer">
+                    <input type="file" name="media" style="font-size: 13px;">
+                    <button type="submit" class="btn">Post</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
 
-                    <!-- Стрічка постів -->
-                    <font face="Arial, sans-serif" size="4" color="#202124"><b>Stream</b></font><br><br>
+        <!-- Стрічка постів -->
+        <h3 style="color: #202124; font-size: 18px; margin: 15px 0 10px 0;">Stream</h3>
 
-                    {% if posts %}
-                        {% for post in posts %}
-                        <table width="100%" border="1" bordercolor="#cccccc" bgcolor="#ffffff" cellpadding="10" cellspacing="0">
-                            <tr>
-                                <td>
-                                    <font face="Arial, sans-serif" size="3" color="#d32f2f"><b>{{ post.username }}</b></font> 
-                                    <font face="Arial, sans-serif" size="1" color="#666666">({{ post.timestamp }})</font>
-                                    <br><hr size="1" color="#eeeeee">
-                                    <font face="Arial, sans-serif" size="2">{{ post.content }}</font>
-                                    
-                                    {% if post.media_filename %}
-                                        <br><br>
-                                        {% if post.media_type == 'image' %}
-                                            <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" width="200"><br>
-                                        {% elif post.media_type == 'video' %}
-                                            <a href="{{ url_for('static', filename='uploads/' + post.media_filename) }}"><font color="#1a73e8">[View Video]</font></a><br>
-                                        {% else %}
-                                            <a href="{{ url_for('static', filename='uploads/' + post.media_filename) }}"><font color="#1a73e8">[Download File]</font></a><br>
-                                        {% endif %}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        </table>
-                        <br>
-                        {% endfor %}
-                    {% else %}
-                        <font face="Arial, sans-serif" size="2" color="#666666">No posts yet.</font>
-                    {% endif %}
+        {% if posts %}
+            {% for post in posts %}
+            <div class="card">
+                <div class="post-header">
+                    <div>
+                        <span class="post-author">{{ post.username }}</span>
+                        <span class="post-time">{{ post.timestamp }}</span>
+                    </div>
+                </div>
+                <div class="post-content">{{ post.content }}</div>
+                
+                {% if post.media_filename %}
+                    <div>
+                        {% if post.media_type == 'image' %}
+                            <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media" alt="Media">
+                        {% elif post.media_type == 'video' %}
+                            <br>
+                            <video src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" controls class="post-media"></video>
+                        {% else %}
+                            <br>
+                            <a href="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="media-link" target="_blank">📎 Download File</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="text-align: center; color: #5f6368; font-style: italic;">
+                No posts yet. Be the first to share something!
+            </div>
+        {% endif %}
 
-                </td>
-            </tr>
-        </table>
-    </center>
+    </div>
+
+    <!-- Нижня панель навігації для швидкого перемикання -->
+    <nav class="bottom-nav">
+        <a href="{{ url_for('index') }}" class="nav-item active">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Collections section coming soon!'); return false;">
+            <span class="nav-icon">📁</span>
+            <span>Collections</span>
+        </a>
+        <a href="{{ url_for('friends') }}" class="nav-item">
+            <span class="nav-icon">👥</span>
+            <span>Communities</span>
+        </a>
+        <a href="#" class="nav-item" onclick="alert('No new notifications'); return false;">
+            <span class="nav-icon">🔔</span>
+            <span>Notifications</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
 
 </body>
 </html>
