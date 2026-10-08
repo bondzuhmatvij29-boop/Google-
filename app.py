@@ -9,21 +9,23 @@ from flask import Flask, render_template, request, redirect, url_for, session
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key_here'
 
-# Налаштування відправки через Gmail SMTP
+# ==================== НАЛАШТУВАННЯ GMAIL SMTP ====================
+# Впиши сюди свій справжній Gmail та 16-значний "App Password" від Google
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "your_email@gmail.com"     # <--- Впиши сюди свій Gmail
-SENDER_PASSWORD = "your_app_password"     # <--- Впиши сюди 16-значний пароль додатка Google
+SENDER_EMAIL = "your_email@gmail.com"         # <--- Твоя пошта
+SENDER_PASSWORD = "your_app_password"         # <--- Пароль додатка (App Password)
+# =================================================================
 
 # Тимчасовий словник для збереження кодів відновлення: {email: code}
 RESET_CODES = {}
 
-# Функція ініціалізації бази даних (створює таблиці, якщо їх ще немає)
+# Ініціалізація бази даних (створює таблиці та автоматично додає колонку email, якщо її не було)
 def init_db():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     
-    # Таблиця користувачів (додано поле email)
+    # Таблиця користувачів
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +35,13 @@ def init_db():
             avatar TEXT DEFAULT 'default.png'
         )
     ''')
+    
+    # На випадок, якщо таблиця вже існувала раніше без поля email
+    try:
+        cursor.execute("ALTER TABLE user ADD COLUMN email TEXT;")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass # Колонка вже існує
     
     # Таблиця постів
     cursor.execute('''
@@ -59,6 +68,10 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Запускаємо ініціалізацію бази при старті
+init_db()
+
+
 # Головна сторінка (стрічка постів)
 @app.route('/')
 def index():
@@ -67,7 +80,7 @@ def index():
     cursor = conn.cursor()
     
     cursor.execute('''
-        SELECT post.*, user.username 
+        SELECT post.*, user.username, user.avatar 
         FROM post 
         JOIN user ON post.user_id = user.id 
         ORDER BY post.id DESC
@@ -77,14 +90,19 @@ def index():
     
     return render_template('index.html', posts=posts)
 
+
 # Сторінка реєстрації
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        password = request.form.get('password')
         email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
         
+        if password != confirm_password:
+            return render_template('register.html', error="Passwords do not match!")
+            
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
         try:
@@ -98,6 +116,7 @@ def register():
             return render_template('register.html', error="Username already exists!")
             
     return render_template('register.html')
+
 
 # Сторінка входу
 @app.route('/login', methods=['GET', 'POST'])
@@ -122,13 +141,15 @@ def login():
             
     return render_template('login.html')
 
+
 # Вихід з акаунта
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# Крок 1: Запит на відновлення пароля (введення email)
+
+# Крок 1: Запит на відновлення пароля (введення email і генерація/відправка коду)
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -164,11 +185,12 @@ def forgot_password():
             server.quit()
         except Exception as e:
             print(f"SMTP Error: {e}")
-            return render_template('forgot_password.html', error="Failed to send email. Check SMTP settings.")
+            return render_template('forgot_password.html', error="Failed to send email. Check SMTP settings or App Password.")
         
         return render_template('verify_code.html', email=email)
     
     return render_template('forgot_password.html')
+
 
 # Крок 2: Перевірка коду та оновлення пароля
 @app.route('/reset-password-verify', methods=['POST'])
@@ -188,6 +210,7 @@ def reset_password_verify():
         return redirect(url_for('login'))
     else:
         return render_template('verify_code.html', email=email, error="Invalid or expired code!")
+
 
 # Створення нового поста
 @app.route('/add_post', methods=['POST'])
@@ -223,6 +246,7 @@ def add_post():
     
     return redirect(url_for('index'))
 
+
 # Сторінка профілю (зміна аватарки)
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -250,6 +274,7 @@ def profile():
     
     return render_template('profile.html', user=user)
 
+
 # Сторінка друзів та спільнот
 @app.route('/friends', methods=['GET', 'POST'])
 def friends():
@@ -269,7 +294,6 @@ def friends():
         
         if target_user:
             target_id = target_user['id']
-            # Перевірка чи вже є зв'язок
             cursor.execute("SELECT * FROM friendship WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
                            (user_id, target_id, target_id, user_id))
             existing = cursor.fetchone()
@@ -282,7 +306,6 @@ def friends():
         else:
             error_msg = "User not found!"
             
-    # Вхідні запити
     cursor.execute('''
         SELECT user.id as sender_id, user.username, user.avatar 
         FROM friendship 
@@ -291,7 +314,6 @@ def friends():
     ''', (user_id,))
     incoming_requests = cursor.fetchall()
     
-    # Список друзів
     cursor.execute('''
         SELECT u.id, u.username, u.avatar 
         FROM friendship f 
@@ -302,6 +324,7 @@ def friends():
     
     conn.close()
     return render_template('friends.html', incoming_requests=incoming_requests, my_friends=my_friends, error_msg=error_msg)
+
 
 @app.route('/accept_friend/<int:sender_id>')
 def accept_friend(sender_id):
@@ -315,6 +338,7 @@ def accept_friend(sender_id):
     conn.close()
     return redirect(url_for('friends'))
 
+
 @app.route('/reject_friend/<int:sender_id>')
 def reject_friend(sender_id):
     if 'user_id' not in session:
@@ -326,6 +350,7 @@ def reject_friend(sender_id):
     conn.commit()
     conn.close()
     return redirect(url_for('friends'))
+
 
 @app.route('/remove_friend/<int:friend_id>')
 def remove_friend(friend_id):
@@ -340,6 +365,6 @@ def remove_friend(friend_id):
     conn.close()
     return redirect(url_for('friends'))
 
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, port=5000)
