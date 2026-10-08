@@ -1,59 +1,119 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Google+ - Login</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
+            background-color: #e5e5e5; 
+            margin: 0; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+        .card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            color: #d32f2f;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            color: #5f6368;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #d32f2f;
+        }
+        .btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #c62828; }
+        .error-box {
+            background: #fce8e6;
+            color: #c5221f;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .footer-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #5f6368;
+        }
+        .footer-link a {
+            color: #1a73e8;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .footer-link a:hover { text-decoration: underline; }
+    </style>
 </head>
-<body bgcolor="#e5e5e5" text="#000000">
+<body>
 
-    <table width="100%" height="100%" border="0" cellspacing="0" cellpadding="0">
-        <tr>
-            <td align="center" valign="middle">
-                
-                <!-- Картка входу у вигляді таблиці HTML 3 -->
-                <table width="300" border="1" bordercolor="#cccccc" cellspacing="0" cellpadding="15" bgcolor="#ffffff">
-                    <tr>
-                        <td align="center">
-                            <font face="Arial, sans-serif" size="5" color="#d32f2f"><b>Google+ Sign In</b></font>
-                            <br><br>
+    <div class="card">
+        <h2>Google+ Sign In</h2>
+        
+        {% if error %}
+            <div class="error-box">{{ error }}</div>
+        {% endif %}
 
-                            {% if error %}
-                            <font face="Arial, sans-serif" size="2" color="#d32f2f"><b>{{ error }}</b></font>
-                            <br><br>
-                            {% endif %}
+        <form method="POST">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" required autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">Log In</button>
+        </form>
 
-                            <form method="POST">
-                                <table border="0" cellspacing="0" cellpadding="3" width="100%">
-                                    <tr>
-                                        <td align="left"><font face="Arial, sans-serif" size="2"><b>Username:</b></font></td>
-                                    </tr>
-                                    <tr>
-                                        <td align="left"><input type="text" name="username" size="25"></td>
-                                    </tr>
-                                    <tr>
-                                        <td align="left"><font face="Arial, sans-serif" size="2"><b>Password:</b></font></td>
-                                    </tr>
-                                    <tr>
-                                        <td align="left"><input type="password" name="password" size="25"></td>
-                                    </tr>
-                                    <tr>
-                                        <td align="center"><br><input type="submit" value="Log In"></td>
-                                    </tr>
-                                </table>
-                            </form>
-
-                            <br>
-                            <font face="Arial, sans-serif" size="2">
-                                Don't have an account?<br>
-                                <a href="{{ url_for('register') }}">Create account</a>
-                            </font>
-                        </td>
-                    </tr>
-                </table>
-
-            </td>
-        </tr>
-    </table>
+        <div class="footer-link">
+            Don't have an account? <br><a href="{{ url_for('register') }}">Create account</a>
+        </div>
+    </div>
 
 </body>
 </html>
