@@ -7,23 +7,15 @@ from flask import (
     flash,
     redirect,
     render_template,
-    render_template_string,
     request,
     session,
     url_for,
 )
-from jinja2 import ChoiceLoader, FileSystemLoader
-from jinja2.exceptions import TemplateNotFound
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_google_plus_revival'
-
-# Налаштування пошуку шаблонів: папка templates + коренева папка elements
-app.jinja_loader = ChoiceLoader(
-    [FileSystemLoader('templates'), FileSystemLoader('elements')]
-)
 
 UPLOAD_FOLDER = 'static/uploads'
 STORAGE_FOLDER = 'static/storage'
@@ -32,30 +24,19 @@ AVATAR_FOLDER = 'static/avatars'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['STORAGE_FOLDER'] = STORAGE_FOLDER
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Ліміт файлів 5 МБ
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Ліміт 5 МБ
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(STORAGE_FOLDER, exist_ok=True)
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs('templates', exist_ok=True)
-os.makedirs('elements', exist_ok=True)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_NAME = os.path.join(BASE_DIR, 'database.db')
 
 
-# Глобальний перехоплювач помилок із захистом від падіння та виведенням точної причини
 @app.errorhandler(Exception)
 def handle_exception(e):
-  # Якщо помилка пов'язана з відсутністю шаблону Jinja
-  if isinstance(e, TemplateNotFound):
-    return (
-        f'<h2 style="color: red;">Помилка відсутності шаблону (TemplateNotFound):</h2>'
-        f'<p>Файл шаблону <b>{e.name}</b> не знайдено у папках <code>templates</code> або <code>elements</code>.</p>'
-        f'<p>Перевір, чи створені всі необхідні файли HTML.</p>',
-        500,
-    )
-
   tb = traceback.format_exc()
   return (
       f'<h2>CRITICAL SERVER ERROR (500):</h2><pre>{tb}</pre>',
@@ -221,29 +202,6 @@ def profile():
   if request.method == 'POST':
     file = request.files.get('avatar')
     if file and file.filename != '':
-      file.seek(0, os.SEEK_END)
-      file_size = file.tell()
-      file.seek(0)
-
-      min_size = 1 * 1024 * 1024
-      max_size = 5 * 1024 * 1024
-
-      if file_size < min_size or file_size > max_size:
-        flash(
-            'Sorry, but the image size must be between 1 MB and 5 MB!',
-            'error',
-        )
-        conn.close()
-        return redirect(url_for('profile'))
-
-      if '18+' in file.filename.lower() or 'nsfw' in file.filename.lower():
-        flash(
-            'Sorry, but this image contains 18+ content and is not allowed!',
-            'error',
-        )
-        conn.close()
-        return redirect(url_for('profile'))
-
       filename = secure_filename(file.filename)
       filename = f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
       filepath = os.path.join(app.config['AVATAR_FOLDER'], filename)
@@ -288,7 +246,6 @@ def friends():
         error_msg = 'You cannot add yourself as a friend.'
       else:
         target_id = target_user['id']
-
         cursor.execute(
             'SELECT * FROM friendships WHERE user_id = ? AND friend_id = ?',
             (session['user_id'], target_id),
@@ -446,5 +403,4 @@ def add_post():
 
 
 if __name__ == '__main__':
-  port = int(os.environ.get('PORT', 5000))
-  app.run(host='0.0.0.0', port=port)
+  app.run(host='0.0.0.0', port=5000, debug=True)
