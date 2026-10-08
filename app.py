@@ -4,7 +4,7 @@ import sqlite3
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template_string, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key_here'
@@ -78,7 +78,6 @@ def index():
     ''')
     posts = cursor.fetchall()
     
-    # Отримуємо дані про поточного користувача, якщо він залогінений
     current_user_data = None
     if 'user_id' in session:
         cursor.execute("SELECT id, username, email, avatar FROM user WHERE id = ?", (session['user_id'],))
@@ -88,54 +87,8 @@ def index():
             
     conn.close()
     
-    # Використовуємо render_template_string з невеликим JS-скриптом для localStorage
-    # Це дозволить зберегти профіль у localStorage при виході зі сторінки, не видаляючи інші дані
-    html_template = """
-    <!doctype html>
-    <html lang="uk">
-    <head>
-        <meta charset="UTF-8">
-        <title>Google+</title>
-    </head>
-    <body>
-        <h1>Стрічка дописів</h1>
-        {% if 'username' in session %}
-            <p>Вітаю, {{ session['username'] }}! <a href="{{ url_for('logout') }}">Вийти</a></p>
-        {% else %}
-            <p><a href="{{ url_for('login') }}">Увійти</a> | <a href="{{ url_for('register') }}">Реєстрація</a></p>
-        {% endif %}
-
-        <hr>
-        <h3>Дописи:</h3>
-        {% for post in posts %}
-            <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
-                <b>{{ post['username'] }}</b> <i>({{ post['timestamp'] }})</i>
-                <p>{{ post['content'] }}</p>
-            </div>
-        {% endfor %}
-
-        <!-- Скрипт для збереження сесії/акаунта в localStorage при закритті сторінки / виході з браузера -->
-        <script>
-            // Передаємо поточного користувача з Python у JavaScript
-            const currentUser = {{ current_user_data | tojson }};
-
-            window.addEventListener('beforeunload', function () {
-                if (currentUser) {
-                    // Зчитуємо те, що вже є в localStorage, щоб не затерти переписки чи інші дані
-                    let appData = JSON.parse(localStorage.getItem('google_plus_app_data')) || { posts: [], user: null };
-                    
-                    // Зберігаємо поточного користувача
-                    appData.user = currentUser;
-                    
-                    // Записуємо назад у localStorage, зберігаючи решту даних недоторканими
-                    localStorage.setItem('google_plus_app_data', JSON.stringify(appData));
-                }
-            });
-        </script>
-    </body>
-    </html>
-    """
-    return render_template_string(html_template, posts=posts, current_user_data=current_user_data)
+    # Використовуємо твій стандартний файл дизайну index.html
+    return render_template('index.html', posts=posts, current_user_data=current_user_data)
 
 
 @app.route('/register', methods=['GET', 'POST'])
