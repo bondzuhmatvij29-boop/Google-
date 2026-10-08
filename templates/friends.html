@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Google+ Friends</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 18px; margin-top: 25px; }
+        .user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #ddd; display: flex; align-items: center; justify-content: center; color: #777; font-size: 12px; }
+        .username { font-weight: bold; color: #444; }
+        .btn { padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 14px; color: #fff; border: none; cursor: pointer; }
+        .btn-add { background-color: #007bff; font-size: 20px; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .btn-add:hover { background-color: #0056b3; }
+        .btn-accept { background-color: #28a745; margin-right: 5px; }
+        .btn-accept:hover { background-color: #218838; }
+        .btn-reject { background-color: #dc3545; }
+        .btn-reject:hover { background-color: #c82333; }
+        .btn-remove { background-color: #6c757d; }
+        .btn-remove:hover { background-color: #5a6268; }
+        .search-form { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .error-msg { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        .back-link { display: inline-block; margin-bottom: 15px; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('index') }}" class="back-link">← Back to Feed</a>
+        
+        <h2>Add Friend by Username</h2>
+        
+        {% if error_msg %}
+            <div class="error-msg">{{ error_msg }}</div>
+        {% endif %}
+
+        <form action="{{ url_for('friends') }}" method="POST" class="search-form">
+            <input type="text" name="username" class="search-input" placeholder="Enter exact friend's username..." required>
+            <button type="submit" class="btn btn-add" title="Send Friend Request">+</button>
+        </form>
+
+        {% if incoming_requests %}
+            <h2>Friend Requests</h2>
+            {% for req in incoming_requests %}
+                <div class="user-item">
+                    <div class="user-info">
+                        {% if req.avatar and req.avatar != 'default.png' %}
+                            <img src="{{ url_for('static', filename='avatars/' + req.avatar) }}" class="avatar">
+                        {% else %}
+                            <div class="avatar">No</div>
+                        {% endif %}
+                        <span class="username">{{ req.username }}</span>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}" class="btn btn-accept">Accept</a>
+                        <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}" class="btn btn-reject">Reject</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <h2>My Friends</h2>
+        {% if my_friends %}
+            {% for friend in my_friends %}
+                <div class="user-item">
+                    <div class="user-info">
+                        {% if friend.avatar and friend.avatar != 'default.png' %}
+                            <img src="{{ url_for('static', filename='avatars/' + friend.avatar) }}" class="avatar">
+                        {% else %}
+                            <div class="avatar">No</div>
+                        {% endif %}
+                        <span class="username">{{ friend.username }}</span>
+                    </div>
+                    <a href="{{ url_for('remove_friend', friend_id=friend.id) }}" class="btn btn-remove">Remove</a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #777; font-size: 14px;">You don't have any friends added yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
