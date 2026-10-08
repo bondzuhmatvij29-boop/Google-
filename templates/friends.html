@@ -2,85 +2,290 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Google+ Friends</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Google+ - Communities & Friends</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 18px; margin-top: 25px; }
-        .user-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-        .user-info { display: flex; align-items: center; gap: 15px; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #ddd; display: flex; align-items: center; justify-content: center; color: #777; font-size: 12px; }
-        .username { font-weight: bold; color: #444; }
-        .btn { padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 14px; color: #fff; border: none; cursor: pointer; }
-        .btn-add { background-color: #007bff; font-size: 20px; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0; }
-        .btn-add:hover { background-color: #0056b3; }
-        .btn-accept { background-color: #28a745; margin-right: 5px; }
-        .btn-accept:hover { background-color: #218838; }
-        .btn-reject { background-color: #dc3545; }
-        .btn-reject:hover { background-color: #c82333; }
-        .btn-remove { background-color: #6c757d; }
-        .btn-remove:hover { background-color: #5a6268; }
-        .search-form { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-        .error-msg { color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
-        .back-link { display: inline-block; margin-bottom: 15px; color: #007bff; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
+            background-color: #e5e5e5; 
+            margin: 0; 
+            padding: 0;
+            padding-bottom: 70px;
+        }
+        header { 
+            background: #d32f2f; 
+            color: white;
+            padding: 12px 16px; 
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 20px; 
+            font-weight: 500; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+        }
+        .container { 
+            max-width: 600px; 
+            width: 100%;
+            margin: 15px auto; 
+            padding: 0 15px; 
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            margin-bottom: 15px;
+        }
+        h3 {
+            margin-top: 0;
+            color: #202124;
+            font-size: 18px;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 8px;
+        }
+        .form-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #d32f2f;
+        }
+        .btn {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #c62828; }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .btn-accept { background: #34a853; color: white; }
+        .btn-accept:hover { background: #2e8b46; }
+        .btn-reject, .btn-remove { background: #ea4335; color: white; }
+        .btn-reject:hover, .btn-remove:hover { background: #d33828; }
+        
+        .error-box {
+            background: #fce8e6;
+            color: #c5221f;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        .user-item:last-child { border-bottom: none; }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar, .default-letter {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .default-letter {
+            background-color: #d32f2f;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+        }
+        .username {
+            font-weight: 500;
+            color: #202124;
+            font-size: 15px;
+        }
+        .actions {
+            display: flex;
+            gap: 6px;
+        }
+        .empty-text {
+            color: #5f6368;
+            font-size: 14px;
+            font-style: italic;
+            margin: 5px 0;
+        }
+
+        /* Нижня панель навігації Google+ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 56px;
+            background: #212121;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #9e9e9e;
+            font-size: 10px;
+            flex: 1;
+            height: 100%;
+        }
+        .nav-item.active { color: #ffffff; }
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+        @media (min-width: 768px) {
+            body { background-color: #f0f2f5; }
+            .container { max-width: 650px; margin: 25px auto; }
+            header { max-width: 650px; margin: 0 auto; border-radius: 0 0 8px 8px; }
+            .bottom-nav { max-width: 550px; left: 50%; transform: translateX(-50%); bottom: 15px; border-radius: 28px; }
+        }
     </style>
 </head>
 <body>
+
+    <header>
+        <a href="{{ url_for('index') }}" style="color: white; text-decoration: none; font-size: 22px;">←</a>
+        <span>Communities & Friends</span>
+    </header>
+
     <div class="container">
-        <a href="{{ url_for('index') }}" class="back-link">← Back to Feed</a>
         
-        <h2>Add Friend by Username</h2>
-        
-        {% if error_msg %}
-            <div class="error-msg">{{ error_msg }}</div>
-        {% endif %}
-
-        <form action="{{ url_for('friends') }}" method="POST" class="search-form">
-            <input type="text" name="username" class="search-input" placeholder="Enter exact friend's username..." required>
-            <button type="submit" class="btn btn-add" title="Send Friend Request">+</button>
-        </form>
-
-        {% if incoming_requests %}
-            <h2>Friend Requests</h2>
-            {% for req in incoming_requests %}
-                <div class="user-item">
-                    <div class="user-info">
-                        {% if req.avatar and req.avatar != 'default.png' %}
-                            <img src="{{ url_for('static', filename='avatars/' + req.avatar) }}" class="avatar">
-                        {% else %}
-                            <div class="avatar">No</div>
-                        {% endif %}
-                        <span class="username">{{ req.username }}</span>
-                    </div>
-                    <div>
-                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}" class="btn btn-accept">Accept</a>
-                        <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}" class="btn btn-reject">Reject</a>
-                    </div>
+        <!-- Форма додавання в друзі -->
+        <div class="card">
+            <h3>Add Friend</h3>
+            <form action="{{ url_for('friends') }}" method="POST">
+                <div class="form-group">
+                    <input type="text" name="username" placeholder="Enter username..." required autocomplete="off">
+                    <button type="submit" class="btn">Add</button>
                 </div>
-            {% endfor %}
-        {% endif %}
+            </form>
+            {% if error_msg %}
+                <div class="error-box">{{ error_msg }}</div>
+            {% endif %}
+        </div>
 
-        <h2>My Friends</h2>
-        {% if my_friends %}
-            {% for friend in my_friends %}
-                <div class="user-item">
-                    <div class="user-info">
-                        {% if friend.avatar and friend.avatar != 'default.png' %}
-                            <img src="{{ url_for('static', filename='avatars/' + friend.avatar) }}" class="avatar">
-                        {% else %}
-                            <div class="avatar">No</div>
-                        {% endif %}
-                        <span class="username">{{ friend.username }}</span>
-                    </div>
-                    <a href="{{ url_for('remove_friend', friend_id=friend.id) }}" class="btn btn-remove">Remove</a>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p style="color: #777; font-size: 14px;">You don't have any friends added yet.</p>
-        {% endif %}
+        <!-- Вхідні запити у друзі -->
+        <div class="card">
+            <h3>Friend Requests</h3>
+            {% if incoming_requests %}
+                <ul class="user-list">
+                    {% for req in incoming_requests %}
+                        <li class="user-item">
+                            <div class="user-info">
+                                {% if req.avatar and req.avatar != 'default.png' %}
+                                    <img src="{{ url_for('static', filename='avatars/' + req.avatar) }}" class="avatar" alt="Avatar">
+                                {% else %}
+                                    <div class="default-letter">{{ req.username[0] | upper }}</div>
+                                {% endif %}
+                                <span class="username">{{ req.username }}</span>
+                            </div>
+                            <div class="actions">
+                                <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}" class="btn-sm btn-accept">Accept</a>
+                                <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}" class="btn-sm btn-reject">Reject</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">No pending friend requests.</p>
+            {% endif %}
+        </div>
+
+        <!-- Список друзів -->
+        <div class="card">
+            <h3>My Friends</h3>
+            {% if my_friends %}
+                <ul class="user-list">
+                    {% for friend in my_friends %}
+                        <li class="user-item">
+                            <div class="user-info">
+                                {% if friend.avatar and friend.avatar != 'default.png' %}
+                                    <img src="{{ url_for('static', filename='avatars/' + friend.avatar) }}" class="avatar" alt="Avatar">
+                                {% else %}
+                                    <div class="default-letter">{{ friend.username[0] | upper }}</div>
+                                {% endif %}
+                                <span class="username">{{ friend.username }}</span>
+                            </div>
+                            <div class="actions">
+                                <a href="{{ url_for('remove_friend', friend_id=friend.id) }}" class="btn-sm btn-remove">Remove</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">You don't have any friends added yet.</p>
+            {% endif %}
+        </div>
+
     </div>
+
+    <!-- Нижня панель навігації Google+ -->
+    <nav class="bottom-nav">
+        <a href="{{ url_for('index') }}" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-item" onclick="alert('Collections section coming soon!'); return false;">
+            <span class="nav-icon">📁</span>
+            <span>Collections</span>
+        </a>
+        <a href="{{ url_for('friends') }}" class="nav-item active">
+            <span class="nav-icon">👥</span>
+            <span>Communities</span>
+        </a>
+        <a href="#" class="nav-item" onclick="alert('No new notifications'); return false;">
+            <span class="nav-icon">🔔</span>
+            <span>Notifications</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-item">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
+
 </body>
 </html>
