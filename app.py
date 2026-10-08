@@ -199,6 +199,14 @@ def profile():
   conn = get_db()
   cursor = conn.cursor()
 
+  cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
+  user = cursor.fetchone()
+
+  if not user:
+    conn.close()
+    session.clear()
+    return redirect(url_for('login'))
+
   if request.method == 'POST':
     file = request.files.get('avatar')
     if file and file.filename != '':
@@ -216,10 +224,7 @@ def profile():
     conn.close()
     return redirect(url_for('profile'))
 
-  cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
-  user = cursor.fetchone()
   conn.close()
-
   return render_template('profile.html', user=user)
 
 
