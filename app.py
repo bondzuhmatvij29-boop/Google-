@@ -5,6 +5,10 @@ from flask import Flask, render_template, request, redirect, url_for, session
 app = Flask(__name__)
 app.secret_key = 'google_plus_super_secret_key'
 
+# Налаштування сесій, щоб браузер не губив авторизацію на хостингу
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # Змініть на True, якщо використовується суворий HTTPS (на деяких хостингах треба False)
+
 def init_db():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -100,8 +104,10 @@ def login():
         conn.close()
         
         if user:
+            session.clear()  # Очищуємо стару сесію перед новим входом
             session['user_id'] = user['id']
             session['username'] = user['username']
+            session.permanent = True  # Робимо сесію стабільною
             return redirect(url_for('index'))
         else:
             return render_template('login.html', error="Invalid username or password!")
