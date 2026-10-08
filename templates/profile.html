@@ -1,216 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Google+ - Profile</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { 
-            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
-            background-color: #e5e5e5; 
-            margin: 0; 
-            padding: 0;
-            padding-bottom: 70px;
-        }
-        header { 
-            background: #d32f2f; 
-            color: white;
-            padding: 12px 16px; 
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 20px; 
-            font-weight: 500; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-        }
-        .container { 
-            max-width: 500px; 
-            width: 100%;
-            margin: 20px auto; 
-            padding: 0 15px; 
-        }
-        .profile-card {
-            background: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-            text-align: center;
-        }
-        /* Стилі для аватарки або букви */
-        .profile-avatar-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 15px;
-        }
-        .profile-avatar {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #d32f2f;
-        }
-        .profile-default-letter {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background-color: #d32f2f;
-            color: white;
-            font-size: 40px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px auto;
-            border: 3px solid #b71c1c;
-            text-transform: uppercase;
-        }
-        .username {
-            font-size: 22px;
-            font-weight: 500;
-            color: #202124;
-            margin-bottom: 20px;
-        }
-        .upload-section {
-            border-top: 1px solid #dadce0;
-            padding-top: 20px;
-            margin-top: 20px;
-            text-align: left;
-        }
-        .upload-section label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #5f6368;
-            display: block;
-            margin-bottom: 8px;
-        }
-        input[type="file"] {
-            font-size: 13px;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .btn {
-            background: #d32f2f;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        .btn:hover { background: #c62828; }
-        .logout-btn {
-            background: #f1f3f4;
-            color: #d32f2f;
-            margin-top: 10px;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            line-height: 38px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .logout-btn:hover { background: #e8eaed; }
-
-        /* Нижня панель навігації Google+ */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 56px;
-            background: #212121;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
-            z-index: 1000;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #9e9e9e;
-            font-size: 10px;
-            flex: 1;
-            height: 100%;
-        }
-        .nav-item.active { color: #ffffff; }
-        .nav-icon { font-size: 20px; margin-bottom: 2px; }
-
-        @media (min-width: 768px) {
-            body { background-color: #f0f2f5; }
-            .container { max-width: 550px; margin: 30px auto; }
-            header { max-width: 550px; margin: 0 auto; border-radius: 0 0 8px 8px; }
-            .bottom-nav { max-width: 500px; left: 50%; transform: translateX(-50%); bottom: 15px; border-radius: 28px; }
-        }
-    </style>
 </head>
-<body>
+<body bgcolor="#e5e5e5" text="#000000">
 
-    <header>
-        <a href="{{ url_for('index') }}" style="color: white; text-decoration: none; font-size: 22px;">←</a>
-        <span>Profile</span>
-    </header>
+    <!-- Верхня панель -->
+    <table width="100%" bgcolor="#d32f2f" border="0" cellpadding="8" cellspacing="0">
+        <tr>
+            <td>
+                <font face="Arial, sans-serif" size="4" color="#ffffff">
+                    <a href="{{ url_for('index') }}"><font color="#ffffff"><b>← Back</b></font></a>
+                </font>
+            </td>
+            <td align="right">
+                <font face="Arial, sans-serif" size="4" color="#ffffff"><b>My Profile</b></font>
+            </td>
+        </tr>
+    </table>
 
-    <div class="container">
-        <div class="profile-card">
-            
-            <!-- Перевірка аватарки: якщо є і не дефолтна — показуємо фото, інакше першу літеру ніка -->
-            <div class="profile-avatar-container">
-                {% if user.avatar and user.avatar != 'default.png' %}
-                    <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" class="profile-avatar" alt="Avatar">
-                {% else %}
-                    <div class="profile-default-letter">
-                        {{ user.username[0] | upper }}
-                    </div>
-                {% endif %}
-            </div>
+    <br>
+    <center>
+        <table width="350" border="1" bordercolor="#cccccc" bgcolor="#ffffff" cellpadding="15" cellspacing="0">
+            <tr>
+                <td align="center">
+                    <font face="Arial, sans-serif" size="5" color="#d32f2f"><b>{{ user.username }}</b></font>
+                    <br><br>
 
-            <div class="username">{{ user.username }}</div>
+                    {% if user.avatar and user.avatar != 'default.png' %}
+                        <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" width="80" height="80"><br><br>
+                    {% else %}
+                        <!-- Якщо немає аватарки, виводимо першу літеру імені -->
+                        <table width="80" height="80" bgcolor="#d32f2f" border="0" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" valign="middle">
+                                    <font face="Arial, sans-serif" size="6" color="#ffffff"><b>{{ user.username[0] | upper }}</b></font>
+                                </td>
+                            </tr>
+                        </table><br>
+                    {% endif %}
 
-            <!-- Форма для завантаження нової аватарки -->
-            <form action="{{ url_for('profile') }}" method="POST" enctype="multipart/form-data" class="upload-section">
-                <label>Change Profile Picture:</label>
-                <input type="file" name="avatar" accept="image/*" required>
-                <button type="submit" class="btn">Upload Avatar</button>
-            </form>
-
-            <a href="{{ url_for('logout') }}" class="logout-btn">Log Out</a>
-        </div>
-    </div>
-
-    <!-- Нижня панель Google+ -->
-    <nav class="bottom-nav">
-        <a href="{{ url_for('index') }}" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span>Home</span>
-        </a>
-        <a href="#" class="nav-item" onclick="alert('Collections section coming soon!'); return false;">
-            <span class="nav-icon">📁</span>
-            <span>Collections</span>
-        </a>
-        <a href="{{ url_for('friends') }}" class="nav-item">
-            <span class="nav-icon">👥</span>
-            <span>Communities</span>
-        </a>
-        <a href="#" class="nav-item" onclick="alert('No new notifications'); return false;">
-            <span class="nav-icon">🔔</span>
-            <span>Notifications</span>
-        </a>
-        <a href="{{ url_for('profile') }}" class="nav-item active">
-            <span class="nav-icon">👤</span>
-            <span>Profile</span>
-        </a>
-    </nav>
+                    <form method="POST" enctype="multipart/form-data">
+                        <font face="Arial, sans-serif" size="2">Change Avatar:</font><br>
+                        <input type="file" name="avatar"><br><br>
+                        <input type="submit" value="Upload Avatar">
+                    </form>
+                    
+                    <br><br>
+                    <a href="{{ url_for('logout') }}"><font color="#d32f2f"><b>Log Out</b></font></a>
+                </td>
+            </tr>
+        </table>
+    </center>
 
 </body>
 </html>
