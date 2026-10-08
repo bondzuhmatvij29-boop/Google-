@@ -1,43 +1,25 @@
 import os
-import random
 import sqlite3
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key_here'
 
-# ==================== НАЛАШТУВАННЯ GMAIL SMTP ====================
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "your_email@gmail.com"         # <--- Твоя пошта
-SENDER_PASSWORD = "your_app_password"         # <--- Пароль додатка (App Password)
-# =================================================================
-
-RESET_CODES = {}
-
 def init_db():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     
+    # Таблиця користувачів (без зайвих полів email)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            email TEXT,
             avatar TEXT DEFAULT 'default.png'
         )
     ''')
     
-    try:
-        cursor.execute("ALTER TABLE user ADD COLUMN email TEXT;")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass
-    
+    # Таблиця постів
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS post (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,6 +31,7 @@ def init_db():
         )
     ''')
     
+    # Таблиця друзів/запитів
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS friendship (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,14 +63,13 @@ def index():
     
     current_user_data = None
     if 'user_id' in session:
-        cursor.execute("SELECT id, username, email, avatar FROM user WHERE id = ?", (session['user_id'],))
+        cursor.execute("SELECT id, username, avatar FROM user WHERE id = ?", (session['user_id'],))
         row = cursor.fetchone()
         if row:
             current_user_data = dict(row)
             
     conn.close()
     
-    # Використовуємо твій стандартний файл дизайну index.html
     return render_template('index.html', posts=posts, current_user_data=current_user_data)
 
 
@@ -95,7 +77,6 @@ def index():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
@@ -105,8 +86,8 @@ def register():
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
         try:
-            cursor.execute("INSERT INTO user (username, password, email) VALUES (?, ?, ?)", 
-                           (username, password, email))
+            cursor.execute("INSERT INTO user (username, password) VALUES (?, ?)", 
+                           (username, password))
             conn.commit()
             conn.close()
             return redirect(url_for('login'))
@@ -146,65 +127,6 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user WHERE email = ?", (email,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if not user:
-            return render_template('forgot_password.html', error="User with this email was not found!")
-
-        code = str(random.randint(100000, 999999))
-        RESET_CODES[email] = code
-        
-        try:
-            msg = MIMEMultipart()
-            msg['From'] = SENDER_EMAIL
-            msg['To'] = email
-            msg['Subject'] = "Google+ Password Reset Code"
-            
-            body = f"Your verification code for Google+ password reset is: {code}\nDo not share this code with anyone!"
-            msg.attach(MIMEText(body, 'plain'))
-            
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, email, msg.as_string())
-            server.quit()
-        except Exception as e:
-            print(f"SMTP Error: {e}")
-            return render_template('forgot_password.html', error="Failed to send email. Check SMTP settings or App Password.")
-        
-        return render_template('verify_code.html', email=email)
-    
-    return render_template('forgot_password.html')
-
-
-@app.route('/reset-password-verify', methods=['POST'])
-def reset_password_verify():
-    email = request.form.get('email')
-    code = request.form.get('code')
-    new_password = request.form.get('new_password')
-    
-    if email in RESET_CODES and RESET_CODES[email] == code:
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        cursor.execute("UPDATE user SET password = ? WHERE email = ?", (new_password, email))
-        conn.commit()
-        conn.close()
-        
-        del RESET_CODES[email]
-        return redirect(url_for('login'))
-    else:
-        return render_template('verify_code.html', email=email, error="Invalid or expired code!")
-
-
 @app.route('/add_post', methods=['POST'])
 def add_post():
     if 'user_id' not in session:
@@ -239,5 +161,44 @@ def add_post():
     return redirect(url_for('index'))
 
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        avatar = request.files.get('avatar')
+        if avatar and avatar.filename != '':
+            avatar_filename = f"user_{session['user_id']}_{avatar.filename}"
+            avatar_folder = 'static/avatars'
+            os.makedirs(avatar_folder, exist_ok=True)
+            avatar.save(os.path.join(avatar_folder, avatar_filename))
+            
+            cursor.execute("UPDATE user SET avatar = ? WHERE id = ?", (avatar_filename, session['user_id']))
+            conn.commit()
+            
+    cursor.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    return render_template('profile.html', user=user)
+
+
+@app.route('/friends', methods=['GET', 'POST'])
+def friends():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user_id = session['user_id']
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    error_msg = None
+    if request.method == 'POST':
+        friend_username = request.form.get('username')
+        cursor.execute("SELECT * FROM user WHERE username = ? AND id != ?", (friend_username
