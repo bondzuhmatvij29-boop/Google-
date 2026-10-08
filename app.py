@@ -15,19 +15,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_google_plus_revival'
+app.secret_key = 'google_plus_super_secret_key_2026'
 
 UPLOAD_FOLDER = 'static/uploads'
-STORAGE_FOLDER = 'static/storage'
 AVATAR_FOLDER = 'static/avatars'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['STORAGE_FOLDER'] = STORAGE_FOLDER
 app.config['AVATAR_FOLDER'] = AVATAR_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Ліміт 5 МБ
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(STORAGE_FOLDER, exist_ok=True)
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 os.makedirs('templates', exist_ok=True)
 
@@ -51,9 +48,11 @@ def get_db():
 
 
 def init_db():
+  """Створює базу даних та таблиці, якщо вони ще не існують"""
   conn = get_db()
   cursor = conn.cursor()
 
+  # Таблиця користувачів (тут назавжди зберігаються всі зареєстровані акаунти)
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +62,7 @@ def init_db():
         )
     """)
 
+  # Таблиця постів стрічки
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS posts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,17 +75,7 @@ def init_db():
         )
     """)
 
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS storage_files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            filename TEXT NOT NULL,
-            original_filename TEXT NOT NULL,
-            timestamp TEXT,
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        )
-    """)
-
+  # Таблиця запитів у друзі
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS friend_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,6 +86,7 @@ def init_db():
         )
     """)
 
+  # Таблиця дружби
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS friendships (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,6 +101,7 @@ def init_db():
   conn.close()
 
 
+# Ініціалізуємо базу при запуску програми
 init_db()
 
 
@@ -118,71 +110,72 @@ def index():
   conn = get_db()
   cursor = conn.cursor()
 
+  # Отримуємо всі пости з бази даних разом з інформацією про авторів
   cursor.execute("""
         SELECT posts.*, users.username, users.avatar FROM posts 
         JOIN users ON posts.user_id = users.id 
         ORDER BY posts.id DESC
     """)
   posts = cursor.fetchall()
-
-  cursor.execute("""
-        SELECT storage_files.*, users.username FROM storage_files 
-        JOIN users ON storage_files.user_id = users.id 
-        ORDER BY storage_files.id DESC
-    """)
-  storage_files = cursor.fetchall()
-
   conn.close()
-  return render_template(
-      'index.html', posts=posts, storage_files=storage_files
-  )
+
+  return render_template('index.html', posts=posts)
 
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+  error = None
   if request.method == 'POST':
-    username = request.form.get('username')
-    password = request.form.get('password')
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
 
     if not username or not password:
-      return redirect(url_for('register'))
+      error = "Введіть ім'я користувача та пароль!"
+    else:
+      hashed_password = generate_password_hash(password)
+      conn = get_db()
+      cursor = conn.cursor()
+      try:
+        # Зберігаємо новий акаунт назавжди в базу даних
+        cursor.execute(
+            'INSERT INTO users (username, password) VALUES (?, ?)',
+            (username, hashed_password),
+        )
+        conn.commit()
+        conn.close()
+        return redirect(url_for('login'))
+      except sqlite3.IntegrityError:
+        conn.close()
+        error = (
+            'Користувач із таким ім’ям уже існує! Виберіть інше ім’я або увійдіть.'
+        )
 
-    hashed_password = generate_password_hash(password)
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-      cursor.execute(
-          'INSERT INTO users (username, password) VALUES (?, ?)',
-          (username, hashed_password),
-      )
-      conn.commit()
-    except sqlite3.IntegrityError:
-      conn.close()
-      return redirect(url_for('register'))
-    conn.close()
-    return redirect(url_for('login'))
-
-  return render_template('register.html')
+  return render_template('register.html', error=error)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+  error = None
   if request.method == 'POST':
-    username = request.form.get('username')
-    password = request.form.get('password')
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
 
     conn = get_db()
     cursor = conn.cursor()
+    # Шукаємо акаунт за іменем у базі даних
     cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
     user = cursor.fetchone()
     conn.close()
 
+    # Перевіряємо чи існує користувач і чи збігається пароль
     if user and check_password_hash(user['password'], password):
       session['user_id'] = user['id']
       session['username'] = user['username']
       return redirect(url_for('index'))
+    else:
+      error = 'Неправильне ім’я користувача або пароль!'
 
-  return render_template('login.html')
+  return render_template('login.html', error=error)
 
 
 @app.route('/logout')
@@ -215,6 +208,7 @@ def profile():
       filepath = os.path.join(app.config['AVATAR_FOLDER'], filename)
       file.save(filepath)
 
+      # Оновлюємо аватарку користувача в базі даних назавжди
       cursor.execute(
           'UPDATE users SET avatar = ? WHERE id = ?',
           (filename, session['user_id']),
@@ -246,9 +240,9 @@ def friends():
       target_user = cursor.fetchone()
 
       if not target_user:
-        error_msg = f"User '{target_username}' not found."
+        error_msg = f"Користувача '{target_username}' не знайдено в базі."
       elif target_user['id'] == session['user_id']:
-        error_msg = 'You cannot add yourself as a friend.'
+        error_msg = 'Ви не можете додати самого себе в друзі.'
       else:
         target_id = target_user['id']
         cursor.execute(
@@ -264,9 +258,9 @@ def friends():
         existing_req = cursor.fetchone()
 
         if already_friends:
-          error_msg = 'You are already friends with this user.'
+          error_msg = 'Ви вже є друзями з цим користувачем.'
         elif existing_req:
-          error_msg = 'Friend request already sent or pending.'
+          error_msg = 'Запит у друзі вже надіслано або очікує підтвердження.'
         else:
           cursor.execute(
               'INSERT INTO friend_requests (sender_id, receiver_id) VALUES (?, ?)',
