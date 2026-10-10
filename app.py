@@ -47,6 +47,7 @@ def init_db():
 
 init_db()
 
+# --- МАРШРУТ ДЛЯ СКИНУВАННЯ ПАРОЛЯ КОРИСТУВАЧА nexus ---
 @app.route('/reset_my_password')
 def reset_my_password():
     try:
@@ -59,6 +60,7 @@ def reset_my_password():
     except Exception as e:
         return f"Password reset error: {e}"
 
+# --- ГЛОБАЛЬНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК 500 ---
 @app.errorhandler(500)
 def internal_error(error):
     tb = traceback.format_exc()
@@ -168,6 +170,9 @@ def add_post():
     media = request.files.get('media')
     media_filename, media_type = None, None
     
+    if (not content or content.strip() == '') and (not media or media.filename == ''):
+        return redirect(url_for('index'))
+    
     if media and media.filename != '':
         media_filename = media.filename
         upload_folder = os.path.join('static', 'uploads')
@@ -181,12 +186,15 @@ def add_post():
         else:
             media_type = 'file'
             
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO post (user_id, content, media_filename, media_type) VALUES (?, ?, ?, ?)",
-                   (session['user_id'], content, media_filename, media_type))
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO post (user_id, content, media_filename, media_type) VALUES (?, ?, ?, ?)",
+                       (session['user_id'], content, media_filename, media_type))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error saving post to DB: {e}")
     
     return redirect(url_for('index'))
 
@@ -212,8 +220,19 @@ def profile():
             
     cursor.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],))
     user = cursor.fetchone()
+    
+    # Підтягуємо список друзів для бокової панелі профілю
+    user_id = session['user_id']
+    cursor.execute('''
+        SELECT u.id, u.username, u.avatar 
+        FROM friendship f 
+        JOIN user u ON (f.user_id = u.id OR f.friend_id = u.id) 
+        WHERE (f.user_id = ? OR f.friend_id = ?) AND f.status = 'accepted' AND u.id != ?
+    ''', (user_id, user_id, user_id))
+    my_friends = cursor.fetchall()
+    
     conn.close()
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', user=user, my_friends=my_friends)
 
 @app.route('/friends', methods=['GET', 'POST'])
 def friends():
