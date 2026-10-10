@@ -1,57 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
 <head>
-    <meta charset="UTF-8">
     <title>Google+ - Friends</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <div class="container">
-        <h2>Friends Management</h2>
-        
-        {% if error_msg %}
-            <div class="error-message" style="color: red; margin-bottom: 10px;">{{ error_msg }}</div>
-        {% endif %}
+<body bgcolor="#e0e0e0" text="#000000">
+<center>
+    <h2><font color="#db4437">Friends Management</font></h2>
+    
+    {% if error_msg %}
+        <p><font color="red"><b>{{ error_msg }}</b></font></p>
+    {% endif %}
 
-        <!-- Add Friend Form -->
-        <form method="POST">
-            <h3>Add Friend</h3>
-            <input type="text" name="username" placeholder="Enter username" required>
-            <button type="submit">Send Request</button>
-        </form>
+    <!-- Add Friend Form -->
+    <form method="POST">
+        <b>Add Friend:</b> 
+        <input type="text" name="username" size="15">
+        <input type="submit" value="Send Request">
+    </form>
+    <br>
 
-        <!-- Incoming Requests -->
-        <h3>Incoming Friend Requests</h3>
+    <!-- Incoming Requests Table -->
+    <table border="1" cellpadding="6" cellspacing="0" width="70%" bgcolor="#ffffff">
+        <tr bgcolor="#cccccc">
+            <th align="left"><b>Incoming Requests</b></th>
+            <th align="center"><b>Action</b></th>
+        </tr>
         {% if incoming_requests %}
-            <ul>
-                {% for req in incoming_requests %}
-                    <li>
-                        {{ req.username }}
-                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}">Accept</a>
+            {% for req in incoming_requests %}
+                <tr>
+                    <td>{{ req.username }}</td>
+                    <td align="center">
+                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}">Accept</a> | 
                         <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}">Reject</a>
-                    </li>
-                {% endfor %}
-            </ul>
+                    </td>
+                </tr>
+            {% endfor %}
         {% else %}
-            <p>No incoming requests.</p>
+            <tr>
+                <td colspan="2" align="center"><i>No incoming requests.</i></td>
+            </tr>
         {% endif %}
+    </table>
 
-        <!-- My Friends List -->
-        <h3>My Friends</h3>
+    <br><br>
+
+    <!-- My Friends Table -->
+    <table border="1" cellpadding="6" cellspacing="0" width="70%" bgcolor="#ffffff">
+        <tr bgcolor="#cccccc">
+            <th align="left" colspan="2"><b>My Friends</b></th>
+        </tr>
         {% if my_friends %}
-            <ul>
-                {% for friend in my_friends %}
-                    <li>
-                        {{ friend.username }}
+            {% for friend in my_friends %}
+                <tr>
+                    <td>{{ friend.username }}</td>
+                    <td align="center" width="20%">
                         <a href="{{ url_for('remove_friend', friend_id=friend.id) }}">Remove</a>
-                    </li>
-                {% endfor %}
-            </ul>
+                    </td>
+                </tr>
+            {% endfor %}
         {% else %}
-            <p>You don't have friends yet.</p>
+            <tr>
+                <td colspan="2" align="center"><i>You don't have any friends added yet.</i></td>
+            </tr>
         {% endif %}
+    </table>
 
-        <p><a href="/">Back to Home</a></p>
-    </div>
+    <br>
+    <p><a href="/">Back to Home</a></p>
+</center>
 </body>
 </html>
