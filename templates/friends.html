@@ -1,72 +1,124 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google+ - Friends</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
+        
+        /* Червона шапка (як у всьому проєкті) */
+        header { background: #db4437; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 22px; }
+        header a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; }
+        header a:hover { background: rgba(255,255,255,0.3); }
+
+        /* Основний адаптивний контейнер */
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        h2, h3 { color: #202124; margin-top: 0; }
+        h2 { border-bottom: 2px solid #db4437; padding-bottom: 10px; margin-bottom: 20px; font-size: 20px; }
+        
+        /* Форма додавання друзів */
+        .add-friend-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        input[type="text"] { flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button, .btn { background: #1a73e8; color: white; border: none; padding: 10px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px; }
+        button:hover, .btn:hover { background: #1557b0; }
+
+        /* Списки (запити та друзі) */
+        .list { list-style: none; padding: 0; margin: 0; }
+        .list li { padding: 12px 15px; margin-bottom: 8px; background: #f8f9fa; border: 1px solid #eee; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        
+        .actions { display: flex; gap: 8px; }
+        .btn-accept { background: #34a853; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; }
+        .btn-accept:hover { background: #2b8c44; }
+        
+        .btn-reject, .btn-remove { background: #ea4335; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; }
+        .btn-reject:hover, .btn-remove:hover { background: #c53929; }
+
+        .error-message { color: #d93025; background: #fce8e6; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; border: 1px solid #fadcda; }
+        .empty-text { color: #5f6368; font-size: 14px; font-style: italic; margin: 10px 0; }
+
+        /* Адаптивність для мобільних пристроїв */
+        @media (max-width: 600px) {
+            .add-friend-form { flex-direction: column; }
+            .list li { flex-direction: column; align-items: flex-start; }
+            .actions { width: 100%; justify-content: flex-end; }
+        }
+    </style>
 </head>
-<body bgcolor="#e0e0e0" text="#000000">
-<center>
-    <h2><font color="#db4437">Friends Management</font></h2>
-    
-    {% if error_msg %}
-        <p><font color="red"><b>{{ error_msg }}</b></font></p>
-    {% endif %}
+<body>
 
-    <!-- Add Friend Form -->
-    <form method="POST">
-        <b>Add Friend:</b> 
-        <input type="text" name="username" size="15">
-        <input type="submit" value="Send Request">
-    </form>
-    <br>
+    <!-- Шапка сайту -->
+    <header>
+        <h1>Google+</h1>
+        <div>
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('profile') }}" style="margin-left: 8px;">Profile</a>
+            <a href="{{ url_for('logout') }}" style="background: #c53929; margin-left: 8px;">Log Out</a>
+        </div>
+    </header>
 
-    <!-- Incoming Requests Table -->
-    <table border="1" cellpadding="6" cellspacing="0" width="70%" bgcolor="#ffffff">
-        <tr bgcolor="#cccccc">
-            <th align="left"><b>Incoming Requests</b></th>
-            <th align="center"><b>Action</b></th>
-        </tr>
-        {% if incoming_requests %}
-            {% for req in incoming_requests %}
-                <tr>
-                    <td>{{ req.username }}</td>
-                    <td align="center">
-                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}">Accept</a> | 
-                        <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}">Reject</a>
-                    </td>
-                </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="2" align="center"><i>No incoming requests.</i></td>
-            </tr>
-        {% endif %}
-    </table>
+    <!-- Основний контент -->
+    <div class="container">
+        
+        <!-- Керування друзями -->
+        <div class="card">
+            <h2>Friends Management</h2>
+            
+            {% if error_msg %}
+                <div class="error-message">{{ error_msg }}</div>
+            {% endif %}
 
-    <br><br>
+            <!-- Форма додавання друга -->
+            <form method="POST" class="add-friend-form">
+                <input type="text" name="username" placeholder="Enter exact username" required>
+                <button type="submit">Send Friend Request</button>
+            </form>
+        </div>
 
-    <!-- My Friends Table -->
-    <table border="1" cellpadding="6" cellspacing="0" width="70%" bgcolor="#ffffff">
-        <tr bgcolor="#cccccc">
-            <th align="left" colspan="2"><b>My Friends</b></th>
-        </tr>
-        {% if my_friends %}
-            {% for friend in my_friends %}
-                <tr>
-                    <td>{{ friend.username }}</td>
-                    <td align="center" width="20%">
-                        <a href="{{ url_for('remove_friend', friend_id=friend.id) }}">Remove</a>
-                    </td>
-                </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="2" align="center"><i>You don't have any friends added yet.</i></td>
-            </tr>
-        {% endif %}
-    </table>
+        <!-- Вхідні запити -->
+        <div class="card">
+            <h3>Incoming Requests</h3>
+            {% if incoming_requests %}
+                <ul class="list">
+                    {% for req in incoming_requests %}
+                        <li>
+                            <span style="font-weight: 500;">👤 {{ req.username }}</span>
+                            <div class="actions">
+                                <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}" class="btn-accept">Accept</a>
+                                <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}" class="btn-reject">Reject</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">No pending incoming requests.</p>
+            {% endif %}
+        </div>
 
-    <br>
-    <p><a href="/">Back to Home</a></p>
-</center>
+        <!-- Список моїх друзів -->
+        <div class="card">
+            <h3>My Friends</h3>
+            {% if my_friends %}
+                <ul class="list">
+                    {% for friend in my_friends %}
+                        <li>
+                            <span style="font-weight: 500;">👤 {{ friend.username }}</span>
+                            <div class="actions">
+                                <a href="{{ url_for('remove_friend', friend_id=friend.id) }}" class="btn-remove">Remove Friend</a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-text">You don't have any friends added yet.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
 </body>
 </html>
