@@ -2,206 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google+ - Profile</title>
     <style>
         * { box-sizing: border-box; }
-        body { 
-            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
-            background-color: #e5e5e5; 
-            margin: 0; 
-            padding: 0;
-            padding-bottom: 70px;
-        }
-        header { 
-            background: #d32f2f; 
-            color: white;
-            padding: 12px 16px; 
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 20px; 
-            font-weight: 500; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-        }
-        .container { 
-            max-width: 500px; 
-            width: 100%;
-            margin: 20px auto; 
-            padding: 0 15px; 
-        }
-        .card {
-            background: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-            text-align: center;
-        }
-        .username {
-            font-size: 22px;
-            font-weight: 500;
-            color: #202124;
-            margin: 15px 0 20px 0;
-        }
-        .avatar-container {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            margin: 0 auto;
-        }
-        .avatar, .default-letter {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .default-letter {
-            background-color: #d32f2f;
-            color: white;
-            font-size: 40px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-transform: uppercase;
-        }
-        .form-group {
-            margin-top: 20px;
-            text-align: left;
-        }
-        .form-group label {
-            font-size: 13px;
-            color: #5f6368;
-            font-weight: 500;
-            display: block;
-            margin-bottom: 8px;
-        }
-        input[type="file"] {
-            width: 100%;
-            font-size: 14px;
-            padding: 8px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            background: #f8f9fa;
-        }
-        .btn {
-            background: #d32f2f;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            width: 100%;
-            margin-top: 15px;
-            transition: background 0.2s;
-        }
-        .btn:hover { background: #c62828; }
-        .logout-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #d32f2f;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 14px;
-        }
-        .logout-link:hover { text-decoration: underline; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
+        
+        /* Червона шапка (як в index.html) */
+        header { background: #db4437; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 22px; }
+        header a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; }
+        header a:hover { background: rgba(255,255,255,0.3); }
 
-        /* Нижня панель навігації */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 56px;
-            background: #212121;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
-            z-index: 1000;
+        /* Основний контейнер (адаптивний сіточний дизайн) */
+        .main-container { max-width: 900px; margin: 20px auto; padding: 0 15px; display: flex; gap: 20px; flex-wrap: wrap; }
+        
+        /* Ліва/центральна колонка профілю */
+        .profile-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex: 1; min-width: 280px; text-align: center; }
+        
+        /* Права колонка зі списком друзів */
+        .friends-sidebar { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 280px; min-width: 250px; }
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; }
+            .friends-sidebar { width: 100%; }
         }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #9e9e9e;
-            font-size: 10px;
-            flex: 1;
-            height: 100%;
-        }
-        .nav-item.active { color: #ffffff; }
-        .nav-icon { font-size: 20px; margin-bottom: 2px; }
 
-        @media (min-width: 768px) {
-            body { background-color: #f0f2f5; }
-            .container { max-width: 550px; margin: 30px auto; }
-            header { max-width: 550px; margin: 0 auto; border-radius: 0 0 8px 8px; }
-            .bottom-nav { max-width: 550px; left: 50%; transform: translateX(-50%); bottom: 15px; border-radius: 28px; }
-        }
+        .avatar-circle { width: 90px; height: 90px; background: #1a73e8; color: white; font-size: 36px; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        h2 { margin-top: 0; color: #202124; }
+        p { color: #5f6368; line-height: 1.4; }
+        
+        form { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        input[type="file"] { font-size: 13px; }
+        button, .btn { background: #1a73e8; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px; }
+        button:hover, .btn:hover { background: #1557b0; }
+
+        /* Список друзів у профільній колонці */
+        .friends-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+        .friends-list li { padding: 8px 0; border-bottom: 1px solid #f0f2f5; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        .friends-list li:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
+    <!-- Шапка сайту -->
     <header>
-        <a href="{{ url_for('index') }}" style="color: white; text-decoration: none; font-size: 22px;">←</a>
-        <span>Profile</span>
+        <h1>Google+</h1>
+        <div>
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('friends') }}" style="margin-left: 8px;">Friends</a>
+            <a href="{{ url_for('logout') }}" style="background: #c53929; margin-left: 8px;">Log Out</a>
+        </div>
     </header>
 
-    <div class="container">
-        <div class="card">
-            <div class="avatar-container">
-                {% if user.avatar and user.avatar != 'default.png' %}
-                    <img src="{{ url_for('static', filename='avatars/' + user.avatar) }}" class="avatar" alt="Avatar">
-                {% else %}
-                    <div class="default-letter">{{ user.username[0] | upper }}</div>
-                {% endif %}
-            </div>
-
-            <div class="username">{{ user.username }}</div>
-
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Change Profile Picture:</label>
-                    <input type="file" name="avatar" required>
+    <!-- Основний контент -->
+    <div class="main-container">
+        
+        <!-- Картка профілю -->
+        <div class="profile-card">
+            {% if user %}
+                <div class="avatar-circle">
+                    {% if user.username and user.username|length > 0 %}
+                        {{ user.username[0] | upper }}
+                    {% else %}
+                        ?
+                    {% endif %}
                 </div>
-                <button type="submit" class="btn">Upload Avatar</button>
-            </form>
-
-            <br>
-            <a href="{{ url_for('logout') }}" class="logout-link">Log out of account</a>
+                <h2>{{ user.username }}</h2>
+                <p><b>Bio:</b> {{ user.bio if user.bio else 'No bio provided yet.' }}</p>
+                
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                
+                <!-- Форма оновлення аватара -->
+                <form method="POST" enctype="multipart/form-data">
+                    <label style="font-size: 13px; font-weight: bold; color: #555;">Update Profile Avatar:</label>
+                    <input type="file" name="avatar" required>
+                    <button type="submit">Upload New Avatar</button>
+                </form>
+            {% else %}
+                <p style="color: red;"><b>User profile not found or you are logged out.</b></p>
+                <a href="{{ url_for('login') }}" class="btn">Log In</a>
+            {% endif %}
         </div>
-    </div>
 
-    <!-- Нижня панель навігації -->
-    <nav class="bottom-nav">
-        <a href="{{ url_for('index') }}" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span>Home</span>
-        </a>
-        <a href="#" class="nav-item" onclick="alert('Collections section coming soon!'); return false;">
-            <span class="nav-icon">📁</span>
-            <span>Collections</span>
-        </a>
-        <a href="{{ url_for('friends') }}" class="nav-item">
-            <span class="nav-icon">👥</span>
-            <span>Communities</span>
-        </a>
-        <a href="#" class="nav-item" onclick="alert('No new notifications'); return false;">
-            <span class="nav-icon">🔔</span>
-            <span>Notifications</span>
-        </a>
-        <a href="{{ url_for('profile') }}" class="nav-item active">
-            <span class="nav-icon">👤</span>
-            <span>Profile</span>
-        </a>
-    </nav>
+        <!-- Бокова панель зі списком друзів -->
+        <div class="friends-sidebar">
+            <h3 style="margin-top: 0; font-size: 16px; color: #202124; border-bottom: 2px solid #db4437; padding-bottom: 8px;">My Friends</h3>
+            
+            {% if my_friends %}
+                <ul class="friends-list">
+                    {% for friend in my_friends %}
+                        <li>
+                            <span>👤 {{ friend.username }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p style="font-size: 13px; color: #777; text-align: center; margin: 20px 0;">No friends added yet.</p>
+            {% endif %}
+            
+            <div style="margin-top: 15px; text-align: center;">
+                <a href="{{ url_for('friends') }}" style="font-size: 13px; color: #1a73e8; text-decoration: none; font-weight: bold;">Manage Friends →</a>
+            </div>
+        </div>
+
+    </div>
 
 </body>
 </html>
