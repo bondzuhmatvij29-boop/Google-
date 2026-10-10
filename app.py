@@ -19,7 +19,7 @@ def init_db():
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 avatar TEXT DEFAULT 'default.png',
-                bio TEXT DEFAULT 'Привіт! Я у Google+'
+                bio TEXT DEFAULT 'Hello! I am using Google+'
             )
         ''')
         cursor.execute('''
@@ -43,11 +43,10 @@ def init_db():
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Помилка ініціалізації БД: {e}")
+        print(f"DB Init Error: {e}")
 
 init_db()
 
-# --- МАРШРУТ ДЛЯ СКИНУВАННЯ ПАРОЛЯ КОРИСТУВАЧА nexus ---
 @app.route('/reset_my_password')
 def reset_my_password():
     try:
@@ -56,26 +55,24 @@ def reset_my_password():
         cursor.execute("UPDATE user SET password = ? WHERE username = 'nexus'", ('123',))
         conn.commit()
         conn.close()
-        return "Пароль для акаунта nexus успішно змінено на 123! Тепер можеш увійти: <a href='/login'>Перейти до входу</a>"
+        return "Password for 'nexus' successfully reset to 123! You can now <a href='/login'>Log in</a>."
     except Exception as e:
-        return f"Помилка при зміні пароля: {e}"
+        return f"Password reset error: {e}"
 
-# --- ГЛОБАЛЬНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК 500 ---
 @app.errorhandler(500)
 def internal_error(error):
     tb = traceback.format_exc()
     return f"""
     <div style="font-family: Arial; padding: 20px; background: #ffebee; color: #c62828; border: 2px solid #c62828; border-radius: 8px; margin: 20px;">
-        <h2>⚠️ Злякалася помилка сервера (500)</h2>
-        <p><strong>Опис проблеми:</strong> {error}</p>
+        <h2>⚠️ Server Error (500)</h2>
+        <p><strong>Description:</strong> {error}</p>
         <hr>
-        <p><strong>Деталі для аналізу (скинь мені цей текст, і ми все виправимо):</strong></p>
+        <p><strong>Traceback details:</strong></p>
         <pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">{tb}</pre>
         <br>
-        <a href="/" style="background: #c62828; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">На головну</a>
+        <a href="/" style="background: #c62828; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px;">Go Home</a>
     </div>
     """, 500
-
 
 @app.context_processor
 def inject_user():
@@ -94,7 +91,6 @@ def inject_user():
             pass
     return dict(current_user_data=current_user_data)
 
-
 @app.route('/')
 def index():
     conn = sqlite3.connect('database.db')
@@ -110,7 +106,6 @@ def index():
     conn.close()
     return render_template('index.html', posts=posts)
 
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     error = None
@@ -120,7 +115,7 @@ def register():
         confirm_password = request.form.get('confirm_password')
         
         if password != confirm_password:
-            error = "Паролі не співпадають!"
+            error = "Passwords do not match!"
         else:
             try:
                 conn = sqlite3.connect('database.db')
@@ -130,11 +125,10 @@ def register():
                 conn.close()
                 return redirect(url_for('login'))
             except sqlite3.IntegrityError:
-                error = "Користувач із таким ім'ям вже існує!"
+                error = "Username already exists!"
             except Exception as e:
-                error = f"Помилка: {e}"
+                error = f"Error: {e}"
     return render_template('register.html', error=error)
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -156,16 +150,14 @@ def login():
             session['username'] = user['username']
             return redirect(url_for('index'))
         else:
-            error = "Невірний логін або пароль!"
+            error = "Invalid username or password!"
             
     return render_template('login.html', error=error)
-
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 
 @app.route('/add_post', methods=['POST'])
 def add_post():
@@ -198,7 +190,6 @@ def add_post():
     
     return redirect(url_for('index'))
 
-
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -223,7 +214,6 @@ def profile():
     user = cursor.fetchone()
     conn.close()
     return render_template('profile.html', user=user)
-
 
 @app.route('/friends', methods=['GET', 'POST'])
 def friends():
@@ -250,9 +240,9 @@ def friends():
                                (user_id, target_id))
                 conn.commit()
             else:
-                error_msg = "Запит уже надіслано або ви вже друзі!"
+                error_msg = "Friend request already sent or you are already friends!"
         else:
-            error_msg = "Користувача не знайдено!"
+            error_msg = "User not found!"
             
     cursor.execute('''
         SELECT user.id as sender_id, user.username, user.avatar 
@@ -273,7 +263,6 @@ def friends():
     conn.close()
     return render_template('friends.html', incoming_requests=incoming_requests, my_friends=my_friends, error_msg=error_msg)
 
-
 @app.route('/accept_friend/<int:sender_id>')
 def accept_friend(sender_id):
     if 'user_id' not in session:
@@ -285,7 +274,6 @@ def accept_friend(sender_id):
     conn.commit()
     conn.close()
     return redirect(url_for('friends'))
-
 
 @app.route('/reject_friend/<int:sender_id>')
 def reject_friend(sender_id):
@@ -299,7 +287,6 @@ def reject_friend(sender_id):
     conn.close()
     return redirect(url_for('friends'))
 
-
 @app.route('/remove_friend/<int:friend_id>')
 def remove_friend(friend_id):
     if 'user_id' not in session:
@@ -311,7 +298,6 @@ def remove_friend(friend_id):
     conn.commit()
     conn.close()
     return redirect(url_for('friends'))
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
