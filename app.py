@@ -47,10 +47,22 @@ def init_db():
 
 init_db()
 
+# --- МАРШРУТ ДЛЯ СКИНУВАННЯ ПАРОЛЯ КОРИСТУВАЧА nexus ---
+@app.route('/reset_my_password')
+def reset_my_password():
+    try:
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute("UPDATE user SET password = ? WHERE username = 'nexus'", ('123',))
+        conn.commit()
+        conn.close()
+        return "Пароль для акаунта nexus успішно змінено на 123! Тепер можеш увійти: <a href='/login'>Перейти до входу</a>"
+    except Exception as e:
+        return f"Помилка при зміні пароля: {e}"
+
 # --- ГЛОБАЛЬНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК 500 ---
 @app.errorhandler(500)
 def internal_error(error):
-    # Отримуємо детальний опис помилки, щоб ти бачив точну причину на екрані
     tb = traceback.format_exc()
     return f"""
     <div style="font-family: Arial; padding: 20px; background: #ffebee; color: #c62828; border: 2px solid #c62828; border-radius: 8px; margin: 20px;">
