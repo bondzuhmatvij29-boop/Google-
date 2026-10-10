@@ -1,93 +1,57 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="UTF-8">
     <title>Google+ - Friends</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body bgcolor="#e5e5e5" text="#000000">
+<body>
+    <div class="container">
+        <h2>Friends Management</h2>
+        
+        {% if error_msg %}
+            <div class="error-message" style="color: red; margin-bottom: 10px;">{{ error_msg }}</div>
+        {% endif %}
 
-    <!-- Верхня панель -->
-    <table width="100%" bgcolor="#d32f2f" border="0" cellpadding="8" cellspacing="0">
-        <tr>
-            <td>
-                <font face="Arial, sans-serif" size="4" color="#ffffff">
-                    <a href="{{ url_for('index') }}"><font color="#ffffff"><b>← Back</b></font></a>
-                </font>
-            </td>
-            <td align="right">
-                <font face="Arial, sans-serif" size="4" color="#ffffff"><b>Communities & Friends</b></font>
-            </td>
-        </tr>
-    </table>
+        <!-- Add Friend Form -->
+        <form method="POST">
+            <h3>Add Friend</h3>
+            <input type="text" name="username" placeholder="Enter username" required>
+            <button type="submit">Send Request</button>
+        </form>
 
-    <br>
-    <center>
-        <table width="90%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-                <td valign="top">
+        <!-- Incoming Requests -->
+        <h3>Incoming Friend Requests</h3>
+        {% if incoming_requests %}
+            <ul>
+                {% for req in incoming_requests %}
+                    <li>
+                        {{ req.username }}
+                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}">Accept</a>
+                        <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}">Reject</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No incoming requests.</p>
+        {% endif %}
 
-                    <!-- Додати друга -->
-                    <table width="100%" border="1" bordercolor="#cccccc" bgcolor="#ffffff" cellpadding="10" cellspacing="0">
-                        <tr>
-                            <td>
-                                <font face="Arial, sans-serif" size="3"><b>Add Friend</b></font><br><br>
-                                <form method="POST">
-                                    <font face="Arial, sans-serif" size="2">Username: </font>
-                                    <input type="text" name="username" size="20">
-                                    <input type="submit" value="Add">
-                                </form>
-                                {% if error_msg %}
-                                    <br><font face="Arial, sans-serif" size="2" color="#d32f2f"><b>{{ error_msg }}</b></font>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-                    <br>
+        <!-- My Friends List -->
+        <h3>My Friends</h3>
+        {% if my_friends %}
+            <ul>
+                {% for friend in my_friends %}
+                    <li>
+                        {{ friend.username }}
+                        <a href="{{ url_for('remove_friend', friend_id=friend.id) }}">Remove</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You don't have friends yet.</p>
+        {% endif %}
 
-                    <!-- Вхідні запити -->
-                    <table width="100%" border="1" bordercolor="#cccccc" bgcolor="#ffffff" cellpadding="10" cellspacing="0">
-                        <tr>
-                            <td>
-                                <font face="Arial, sans-serif" size="3"><b>Friend Requests</b></font><br><hr size="1" color="#eeeeee">
-                                {% if incoming_requests %}
-                                    {% for req in incoming_requests %}
-                                        <font face="Arial, sans-serif" size="2"><b>{{ req.username }}</b></font> 
-                                        &nbsp;&nbsp;
-                                        <a href="{{ url_for('accept_friend', sender_id=req.sender_id) }}"><font color="#34a853">[Accept]</font></a>
-                                        <a href="{{ url_for('reject_friend', sender_id=req.sender_id) }}"><font color="#ea4335">[Reject]</font></a>
-                                        <br><br>
-                                    {% endfor %}
-                                {% else %}
-                                    <font face="Arial, sans-serif" size="2" color="#666666">No pending friend requests.</font>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-                    <br>
-
-                    <!-- Список друзів -->
-                    <table width="100%" border="1" bordercolor="#cccccc" bgcolor="#ffffff" cellpadding="10" cellspacing="0">
-                        <tr>
-                            <td>
-                                <font face="Arial, sans-serif" size="3"><b>My Friends</b></font><br><hr size="1" color="#eeeeee">
-                                {% if my_friends %}
-                                    {% for friend in my_friends %}
-                                        <font face="Arial, sans-serif" size="2"><b>{{ friend.username }}</b></font>
-                                        &nbsp;&nbsp;
-                                        <a href="{{ url_for('remove_friend', friend_id=friend.id) }}"><font color="#ea4335">[Remove]</font></a>
-                                        <br><br>
-                                    {% endfor %}
-                                {% else %}
-                                    <font face="Arial, sans-serif" size="2" color="#666666">You don't have any friends added yet.</font>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-
-                </td>
-            </tr>
-        </table>
-    </center>
-
+        <p><a href="/">Back to Home</a></p>
+    </div>
 </body>
 </html>
