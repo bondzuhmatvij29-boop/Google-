@@ -78,7 +78,7 @@
     <!-- Основний вміст -->
     <div class="container">
         
-        <!-- Слайдер банерів -->
+        <!-- Слайдер банерів (динамічно зчитує всі картинки з папки static/banners/) -->
         <div class="banner-container">
             {% if banners %}
                 <div class="slideshow" id="bannerSlideshow">
@@ -93,7 +93,7 @@
             {% endif %}
         </div>
 
-        <!-- Форма публікації поста із JavaScript обробкою -->
+        <!-- Форма створення поста із JavaScript обробкою -->
         {% if session.get('user_id') %}
             <div class="card">
                 <form id="postForm" action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
@@ -155,7 +155,7 @@
     <!-- JavaScript для слайдера банерів та інтерактивності кнопок -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Логіка слайдера банерів (кожні 3 секунди)
+            // 1. Динамічний слайдер банерів (автоматично крутить стільки картинок, скільки є в папці)
             const slides = document.querySelectorAll('.banner-slide');
             if (slides.length > 1) {
                 let currentIndex = 0;
@@ -166,7 +166,7 @@
                 }, 3000);
             }
 
-            // 2. JavaScript обробка натискання кнопки створення поста
+            // 2. JavaScript обробник для кнопки публікації (захист від порожніх постів + індикатор завантаження)
             const postForm = document.getElementById('postForm');
             const postBtn = document.getElementById('postBtn');
             const postContent = document.getElementById('postContent');
@@ -179,7 +179,6 @@
                         return;
                     }
                     
-                    // Змінюємо текст кнопки та робимо її неактивною, щоб показати користувачу процес
                     postBtn.innerText = "Posting...";
                     postBtn.disabled = true;
                 });
