@@ -11,7 +11,7 @@
         /* Червона шапка */
         header { background: #db4437; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         header h1 { margin: 0; font-size: 22px; }
-        header .nav-links a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; margin-left: 6px; display: inline-block; }
+        header .nav-links a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; margin-left: 6px; display: inline-block; transition: background 0.2s; }
         header .nav-links a:hover { background: rgba(255,255,255,0.3); }
 
         /* Основний контейнер */
@@ -24,17 +24,22 @@
         .banner-slide.active { opacity: 1; }
         .banner-fallback { display: flex; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #1a73e8, #4285f4); color: white; font-weight: bold; font-size: 18px; text-align: center; padding: 0 20px; }
 
-        /* Картки (форма створення поста, пости) */
+        /* Картки */
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
         
         /* Форма створення поста */
-        textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; min-height: 80px; font-family: inherit; font-size: 14px; margin-bottom: 10px; }
+        textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; min-height: 80px; font-family: inherit; font-size: 14px; margin-bottom: 10px; outline: none; transition: border-color 0.2s; }
+        textarea:focus { border-color: #1a73e8; }
         .post-form-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         input[type="file"] { font-size: 13px; }
-        button, .btn { background: #1a73e8; color: white; border: none; padding: 8px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; }
+        
+        /* Інтерактивні кнопки з JavaScript-відгуком */
+        button, .btn { background: #1a73e8; color: white; border: none; padding: 9px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; transition: background 0.2s, transform 0.1s; display: inline-block; }
         button:hover, .btn:hover { background: #1557b0; }
+        button:active, .btn:active { transform: scale(0.97); }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
 
-        /* Стилі стрічки дописів */
+        /* Стрічка дописів */
         .post-header { display: flex; align-items: center; margin-bottom: 12px; }
         .post-avatar { width: 40px; height: 40px; background: #1a73e8; color: white; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 16px; overflow: hidden; }
         .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -88,14 +93,14 @@
             {% endif %}
         </div>
 
-        <!-- Форма публікації поста (тільки для авторизованих) -->
+        <!-- Форма публікації поста із JavaScript обробкою -->
         {% if session.get('user_id') %}
             <div class="card">
-                <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
-                    <textarea name="content" placeholder="What's on your mind?..." required></textarea>
+                <form id="postForm" action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
+                    <textarea id="postContent" name="content" placeholder="What's on your mind?..." required></textarea>
                     <div class="post-form-footer">
                         <input type="file" name="media" accept="image/*,video/*">
-                        <button type="submit">Post</button>
+                        <button type="submit" id="postBtn">Post</button>
                     </div>
                 </form>
             </div>
@@ -147,9 +152,10 @@
 
     </div>
 
-    <!-- JavaScript для автоматичної зміни банерів кожні 3 секунди -->
+    <!-- JavaScript для слайдера банерів та інтерактивності кнопок -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // 1. Логіка слайдера банерів (кожні 3 секунди)
             const slides = document.querySelectorAll('.banner-slide');
             if (slides.length > 1) {
                 let currentIndex = 0;
@@ -157,7 +163,26 @@
                     slides[currentIndex].classList.remove('active');
                     currentIndex = (currentIndex + 1) % slides.length;
                     slides[currentIndex].classList.add('active');
-                }, 3000); // 3000 мс = 3 секунди
+                }, 3000);
+            }
+
+            // 2. JavaScript обробка натискання кнопки створення поста
+            const postForm = document.getElementById('postForm');
+            const postBtn = document.getElementById('postBtn');
+            const postContent = document.getElementById('postContent');
+
+            if (postForm && postBtn) {
+                postForm.addEventListener('submit', function(e) {
+                    if (!postContent.value.trim()) {
+                        e.preventDefault();
+                        alert("Please write something before posting!");
+                        return;
+                    }
+                    
+                    // Змінюємо текст кнопки та робимо її неактивною, щоб показати користувачу процес
+                    postBtn.innerText = "Posting...";
+                    postBtn.disabled = true;
+                });
             }
         });
     </script>
