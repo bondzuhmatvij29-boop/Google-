@@ -138,7 +138,7 @@ def index():
     posts = cursor.fetchall()
     conn.close()
     
-    # Сканування банерів із папки static/banners
+    # Динамічне сканування всіх банерів із папки static/banners
     banner_folder = os.path.join('static', 'banners')
     banners = []
     if os.path.exists(banner_folder):
