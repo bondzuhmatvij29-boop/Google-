@@ -44,6 +44,17 @@
             transition: opacity 0.8s ease-in-out; 
         }
         .banner-slide.active { opacity: 1; }
+        
+        /* Стиль для банерів-посилань */
+        a.banner-slide {
+            display: block;
+        }
+        a.banner-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
         .banner-fallback { 
             display: flex; 
             align-items: center; 
@@ -111,12 +122,22 @@
     <!-- Основний вміст -->
     <div class="container">
         
-        <!-- Слайдер банерів -->
+        <!-- Слайдер банерів з посиланнями на 2 та 3 слайди -->
         <div class="banner-container">
             {% if banners %}
                 <div class="slideshow" id="bannerSlideshow">
                     {% for banner in banners %}
-                        <img src="{{ url_for('static', filename='banners/' + banner) }}" class="banner-slide {% if loop.first %}active{% endif %}" alt="Google+ Banner">
+                        {% if loop.index == 2 %}
+                            <a href="https://dalink.to/009518dd" target="_blank" class="banner-slide {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename='banners/' + banner) }}" alt="Banner 2">
+                            </a>
+                        {% elif loop.index == 3 %}
+                            <a href="https://t.me/nexustorvard" target="_blank" class="banner-slide {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename='banners/' + banner) }}" alt="Banner 3">
+                            </a>
+                        {% else %}
+                            <img src="{{ url_for('static', filename='banners/' + banner) }}" class="banner-slide {% if loop.first %}active{% endif %}" alt="Google+ Banner">
+                        {% endif %}
                     {% endfor %}
                 </div>
             {% else %}
