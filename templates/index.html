@@ -17,12 +17,45 @@
         /* Основний контейнер */
         .container { max-width: 650px; margin: 20px auto; padding: 0 15px; }
 
-        /* Слайдер банерів */
-        .banner-container { width: 100%; height: 150px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
-        .slideshow { position: relative; width: 100%; height: 100%; }
-        .banner-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.8s ease-in-out; }
+        /* Збільшений слайдер банерів (100% вміщення без обрізань) */
+        .banner-container { 
+            width: 100%; 
+            height: 220px; 
+            background: #1a1a1a; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            margin-bottom: 20px; 
+            position: relative; 
+        }
+        .slideshow { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+        }
+        .banner-slide { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            opacity: 0; 
+            transition: opacity 0.8s ease-in-out; 
+        }
         .banner-slide.active { opacity: 1; }
-        .banner-fallback { display: flex; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #1a73e8, #4285f4); color: white; font-weight: bold; font-size: 18px; text-align: center; padding: 0 20px; }
+        .banner-fallback { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100%; 
+            background: linear-gradient(135deg, #1a73e8, #4285f4); 
+            color: white; 
+            font-weight: bold; 
+            font-size: 18px; 
+            text-align: center; 
+            padding: 0 20px; 
+        }
 
         /* Картки */
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
@@ -53,7 +86,7 @@
             header { padding: 10px 15px; }
             header h1 { font-size: 18px; }
             header .nav-links a { padding: 5px 8px; font-size: 12px; margin-left: 4px; }
-            .banner-container { height: 120px; }
+            .banner-container { height: 160px; }
             .card { padding: 15px; }
         }
     </style>
@@ -78,7 +111,7 @@
     <!-- Основний вміст -->
     <div class="container">
         
-        <!-- Слайдер банерів (динамічно зчитує всі картинки з папки static/banners/) -->
+        <!-- Слайдер банерів -->
         <div class="banner-container">
             {% if banners %}
                 <div class="slideshow" id="bannerSlideshow">
@@ -155,7 +188,7 @@
     <!-- JavaScript для слайдера банерів та інтерактивності кнопок -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Динамічний слайдер банерів (автоматично крутить стільки картинок, скільки є в папці)
+            // 1. Автоматичний слайдер банерів (кожні 3 секунди)
             const slides = document.querySelectorAll('.banner-slide');
             if (slides.length > 1) {
                 let currentIndex = 0;
@@ -166,7 +199,7 @@
                 }, 3000);
             }
 
-            // 2. JavaScript обробник для кнопки публікації (захист від порожніх постів + індикатор завантаження)
+            // 2. JavaScript обробник для кнопки публікації
             const postForm = document.getElementById('postForm');
             const postBtn = document.getElementById('postBtn');
             const postContent = document.getElementById('postContent');
