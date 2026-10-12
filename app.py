@@ -3,6 +3,16 @@ import sqlite3
 import traceback
 from flask import Flask, render_template, request, redirect, url_for, session
 
+# Безпечний імпорт початкових постів із файла posts.py
+try:
+    from posts import INITIAL_POSTS
+except ImportError:
+    INITIAL_POSTS = [
+        {"username": "nexus", "content": "Welcome to the new Google+ clone! Fully optimized, fast, and completely in English. 🚀"},
+        {"username": "nexus", "content": "Testing out the mobile responsiveness and layout styles. Everything looks clean and modern! ✨"},
+        {"username": "nexus", "content": "Feel free to add friends, share posts, and test out the platform features from any device."}
+    ]
+
 app = Flask(__name__)
 app.secret_key = 'google_plus_super_secret_key'
 
@@ -13,6 +23,7 @@ def init_db():
     try:
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,9 +52,29 @@ def init_db():
             )
         ''')
         conn.commit()
+        
+        # Перевірка / створення тестового акаунта nexus
+        cursor.execute("SELECT id FROM user WHERE username = 'nexus'")
+        nexus_user = cursor.fetchone()
+        if not nexus_user:
+            cursor.execute("INSERT INTO user (username, password, bio) VALUES (?, ?, ?)", 
+                           ('nexus', '123', 'Project Creator & Developer. Welcome to Google+ clone!'))
+            conn.commit()
+            cursor.execute("SELECT id FROM user WHERE username = 'nexus'")
+            nexus_user = cursor.fetchone()
+        
+        nexus_id = nexus_user[0] if nexus_user else 1
+
+        # Синхронізація базових постів із posts.py
+        for p in INITIAL_POSTS:
+            cursor.execute("SELECT id FROM post WHERE content = ? AND user_id = ?", (p["content"], nexus_id))
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO post (user_id, content) VALUES (?, ?)", (nexus_id, p["content"]))
+                conn.commit()
+        
         conn.close()
     except Exception as e:
-        print(f"DB Init Error: {e}")
+        print(f"DB Init/Seeding Error: {e}")
 
 init_db()
 
@@ -106,7 +137,14 @@ def index():
     ''')
     posts = cursor.fetchall()
     conn.close()
-    return render_template('index.html', posts=posts)
+    
+    # Сканування банерів із папки static/banners
+    banner_folder = os.path.join('static', 'banners')
+    banners = []
+    if os.path.exists(banner_folder):
+        banners = [f for f in os.listdir(banner_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp'))]
+    
+    return render_template('index.html', posts=posts, banners=banners)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -221,7 +259,6 @@ def profile():
     cursor.execute("SELECT * FROM user WHERE id = ?", (session['user_id'],))
     user = cursor.fetchone()
     
-    # Підтягуємо список друзів для бокової панелі профілю
     user_id = session['user_id']
     cursor.execute('''
         SELECT u.id, u.username, u.avatar 
