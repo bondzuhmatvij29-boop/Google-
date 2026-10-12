@@ -2,242 +2,165 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google+ - Home</title>
     <style>
         * { box-sizing: border-box; }
-        body { 
-            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; 
-            background-color: #e5e5e5; 
-            margin: 0; 
-            padding: 0;
-            padding-bottom: 70px; /* Відступ для нижньої панелі на телефонах */
-        }
-        header { 
-            background: #d32f2f; 
-            color: white;
-            padding: 12px 16px; 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-        }
-        .logo { font-size: 20px; font-weight: 500; color: white; text-decoration: none; }
-        .nav-links a { color: white; text-decoration: none; margin-left: 12px; font-size: 14px; font-weight: 500; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
         
-        .container { 
-            max-width: 600px; 
-            width: 100%;
-            margin: 15px auto; 
-            padding: 0 12px; 
-        }
+        /* Червона шапка */
+        header { background: #db4437; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 22px; }
+        header .nav-links a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; margin-left: 6px; display: inline-block; }
+        header .nav-links a:hover { background: rgba(255,255,255,0.3); }
+
+        /* Основний контейнер */
+        .container { max-width: 650px; margin: 20px auto; padding: 0 15px; }
+
+        /* Слайдер банерів */
+        .banner-container { width: 100%; height: 150px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
+        .slideshow { position: relative; width: 100%; height: 100%; }
+        .banner-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.8s ease-in-out; }
+        .banner-slide.active { opacity: 1; }
+        .banner-fallback { display: flex; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #1a73e8, #4285f4); color: white; font-weight: bold; font-size: 18px; text-align: center; padding: 0 20px; }
+
+        /* Картки (форма створення поста, пости) */
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
         
-        .card {
-            background: #fff;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-            margin-bottom: 15px;
-        }
-        
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 14px;
-            resize: vertical;
-            outline: none;
-            font-family: inherit;
-        }
-        textarea:focus { border-color: #d32f2f; }
-        
-        .form-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .btn {
-            background: #d32f2f;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        .btn:hover { background: #c62828; }
-        
-        .post-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
+        /* Форма створення поста */
+        textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; min-height: 80px; font-family: inherit; font-size: 14px; margin-bottom: 10px; }
+        .post-form-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        input[type="file"] { font-size: 13px; }
+        button, .btn { background: #1a73e8; color: white; border: none; padding: 8px 18px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; }
+        button:hover, .btn:hover { background: #1557b0; }
+
+        /* Стилі стрічки дописів */
+        .post-header { display: flex; align-items: center; margin-bottom: 12px; }
+        .post-avatar { width: 40px; height: 40px; background: #1a73e8; color: white; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 16px; overflow: hidden; }
+        .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .post-author { font-weight: bold; color: #202124; font-size: 15px; }
-        .post-time { font-size: 12px; color: #5f6368; margin-left: 8px; }
-        .post-content { font-size: 14px; color: #202124; line-height: 1.4; word-break: break-word; }
-        
-        .post-media {
-            margin-top: 10px;
-            max-width: 100%;
-            border-radius: 4px;
-            max-height: 400px;
-            object-fit: contain;
-        }
-        
-        .media-link {
-            display: inline-block;
-            margin-top: 8px;
-            color: #1a73e8;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .media-link:hover { text-decoration: underline; }
+        .post-time { font-size: 12px; color: #70757a; }
+        .post-content { font-size: 15px; color: #3c4043; line-height: 1.5; margin-bottom: 12px; word-break: break-word; }
+        .post-media { width: 100%; max-height: 350px; object-fit: cover; border-radius: 6px; margin-top: 8px; }
 
-        /* Нижня панель навігації для мобільних */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 56px;
-            background: #212121;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.3);
-            z-index: 1000;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #9e9e9e;
-            font-size: 10px;
-            flex: 1;
-            height: 100%;
-        }
-        .nav-item.active { color: #ffffff; }
-        .nav-icon { font-size: 20px; margin-bottom: 2px; }
-
-        /* Адаптивність для планшетів та ПК */
-        @media (min-width: 768px) {
-            body { background-color: #f0f2f5; }
-            .container { max-width: 650px; margin: 25px auto; }
-            header { max-width: 650px; margin: 0 auto; border-radius: 0 0 8px 8px; }
-            .bottom-nav { 
-                max-width: 550px; 
-                left: 50%; 
-                transform: translateX(-50%); 
-                bottom: 15px; 
-                border-radius: 28px; 
-            }
+        /* Адаптивність */
+        @media (max-width: 600px) {
+            header { padding: 10px 15px; }
+            header h1 { font-size: 18px; }
+            header .nav-links a { padding: 5px 8px; font-size: 12px; margin-left: 4px; }
+            .banner-container { height: 120px; }
+            .card { padding: 15px; }
         }
     </style>
 </head>
 <body>
 
+    <!-- Шапка сайту -->
     <header>
-        <a href="{{ url_for('index') }}" class="logo">Google+</a>
+        <h1>Google+</h1>
         <div class="nav-links">
-            {% if session.user_id %}
+            {% if session.get('user_id') %}
                 <a href="{{ url_for('profile') }}">Profile</a>
                 <a href="{{ url_for('friends') }}">Friends</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
+                <a href="{{ url_for('logout') }}" style="background: #c53929;">Log Out</a>
             {% else %}
-                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('login') }}">Log In</a>
                 <a href="{{ url_for('register') }}">Register</a>
             {% endif %}
         </div>
     </header>
 
+    <!-- Основний вміст -->
     <div class="container">
         
-        {% if session.user_id %}
-        <!-- Форма створення поста -->
-        <div class="card">
-            <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
-                <textarea name="content" rows="3" placeholder="Share what's new..."></textarea>
-                <div class="form-footer">
-                    <input type="file" name="media" style="font-size: 13px;">
-                    <button type="submit" class="btn">Post</button>
+        <!-- Слайдер банерів -->
+        <div class="banner-container">
+            {% if banners %}
+                <div class="slideshow" id="bannerSlideshow">
+                    {% for banner in banners %}
+                        <img src="{{ url_for('static', filename='banners/' + banner) }}" class="banner-slide {% if loop.first %}active{% endif %}" alt="Google+ Banner">
+                    {% endfor %}
                 </div>
-            </form>
+            {% else %}
+                <div class="banner-fallback">
+                    <span>Welcome to Google+ — Connect & Share</span>
+                </div>
+            {% endif %}
         </div>
+
+        <!-- Форма публікації поста (тільки для авторизованих) -->
+        {% if session.get('user_id') %}
+            <div class="card">
+                <form action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
+                    <textarea name="content" placeholder="What's on your mind?..." required></textarea>
+                    <div class="post-form-footer">
+                        <input type="file" name="media" accept="image/*,video/*">
+                        <button type="submit">Post</button>
+                    </div>
+                </form>
+            </div>
         {% endif %}
 
-        <!-- Стрічка постів -->
-        <h3 style="color: #202124; font-size: 18px; margin: 15px 0 10px 0;">Stream</h3>
+        <!-- Стрічка дописів -->
+        <div class="posts-feed">
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="card">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                {% if post.avatar and post.avatar != 'default.png' %}
+                                    <img src="{{ url_for('static', filename='avatars/' + post.avatar) }}" alt="Avatar">
+                                {% else %}
+                                    {{ post.username[0] | upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="post-author">{{ post.username }}</div>
+                                <div class="post-time">{{ post.timestamp }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="post-content">
+                            {{ post.content }}
+                        </div>
 
-        {% if posts %}
-            {% for post in posts %}
-            <div class="card">
-                <div class="post-header">
-                    <div>
-                        <span class="post-author">{{ post.username }}</span>
-                        <span class="post-time">{{ post.timestamp }}</span>
-                    </div>
-                </div>
-                <div class="post-content">{{ post.content }}</div>
-                
-                {% if post.media_filename %}
-                    <div>
-                        {% if post.media_type == 'image' %}
-                            <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media" alt="Media">
-                        {% elif post.media_type == 'video' %}
-                            <br>
-                            <video src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" controls class="post-media"></video>
-                        {% else %}
-                            <br>
-                            <a href="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="media-link" target="_blank">📎 Download File</a>
+                        {% if post.media_filename %}
+                            <div>
+                                {% if post.media_type == 'image' %}
+                                    <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media" alt="Post Image">
+                                {% elif post.media_type == 'video' %}
+                                    <video controls class="post-media">
+                                        <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}">
+                                        Your browser does not support the video tag.
+                                   </video>
+                                {% endif %}
+                            </div>
                         {% endif %}
                     </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="card" style="text-align: center; color: #5f6368; font-style: italic;">
-                No posts yet. Be the first to share something!
-            </div>
-        {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="card" style="text-align: center; color: #777;">
+                    <p>No posts available yet. Be the first to share something!</p>
+                </div>
+            {% endif %}
+        </div>
 
     </div>
 
-    <!-- Нижня панель навігації для швидкого перемикання -->
-    <nav class="bottom-nav">
-        <a href="{{ url_for('index') }}" class="nav-item active">
-            <span class="nav-icon">🏠</span>
-            <span>Home</span>
-        </a>
-        <a href="#" class="nav-item" onclick="alert('Collections section coming soon!'); return false;">
-            <span class="nav-icon">📁</span>
-            <span>Collections</span>
-        </a>
-        <a href="{{ url_for('friends') }}" class="nav-item">
-            <span class="nav-icon">👥</span>
-            <span>Communities</span>
-        </a>
-        <a href="#" class="nav-item" onclick="alert('No new notifications'); return false;">
-            <span class="nav-icon">🔔</span>
-            <span>Notifications</span>
-        </a>
-        <a href="{{ url_for('profile') }}" class="nav-item">
-            <span class="nav-icon">👤</span>
-            <span>Profile</span>
-        </a>
-    </nav>
+    <!-- JavaScript для автоматичної зміни банерів кожні 3 секунди -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const slides = document.querySelectorAll('.banner-slide');
+            if (slides.length > 1) {
+                let currentIndex = 0;
+                setInterval(() => {
+                    slides[currentIndex].classList.remove('active');
+                    currentIndex = (currentIndex + 1) % slides.length;
+                    slides[currentIndex].classList.add('active');
+                }, 3000); // 3000 мс = 3 секунди
+            }
+        });
+    </script>
 
 </body>
 </html>
