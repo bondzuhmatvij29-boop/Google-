@@ -1,51 +1,244 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google+ Возрождение — Закрыто</title>
+    <title>Google+ - Home</title>
     <style>
         * { box-sizing: border-box; }
-        body { 
-            margin: 0; 
-            padding: 20px; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #121212; 
-            color: #e0e0e0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            text-align: center; 
-        }
-        .container { 
-            max-width: 550px; 
-            padding: 40px 30px; 
-            background: #1e1e1e; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 25px rgba(0,0,0,0.6); 
-            border: 1px solid #333; 
-        }
-        h1 { 
-            color: #ff5252; 
-            margin-top: 0; 
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #333; }
+        
+        /* Червона шапка */
+        header { background: #db4437; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 22px; }
+        header .nav-links a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; margin-left: 6px; display: inline-block; transition: background 0.2s; }
+        header .nav-links a:hover { background: rgba(255,255,255,0.3); }
+
+        /* Основний контейнер */
+        .container { max-width: 650px; margin: 20px auto; padding: 0 15px; }
+
+        /* Збільшений слайдер банерів (100% вміщення без обрізань) */
+        .banner-container { 
+            width: 100%; 
+            height: 220px; 
+            background: #1a1a1a; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
             margin-bottom: 20px; 
-            font-size: 22px; 
+            position: relative; 
         }
-        p { 
-            font-size: 16px; 
-            line-height: 1.6; 
-            color: #d0d0d0; 
-            margin: 0; 
+        .slideshow { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+        }
+        .banner-slide { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            opacity: 0; 
+            transition: opacity 0.8s ease-in-out; 
+        }
+        .banner-slide.active { opacity: 1; }
+        
+        /* Стиль для банерів-посилань */
+        a.banner-slide {
+            display: block;
+        }
+        a.banner-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .banner-fallback { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100%; 
+            background: linear-gradient(135deg, #1a73e8, #4285f4); 
+            color: white; 
+            font-weight: bold; 
+            font-size: 18px; 
+            text-align: center; 
+            padding: 0 20px; 
+        }
+
+        /* Картки */
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        
+        /* Форма створення поста */
+        textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; min-height: 80px; font-family: inherit; font-size: 14px; margin-bottom: 10px; outline: none; transition: border-color 0.2s; }
+        textarea:focus { border-color: #1a73e8; }
+        .post-form-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        input[type="file"] { font-size: 13px; }
+        
+        /* Інтерактивні кнопки з JavaScript-відгуком */
+        button, .btn { background: #1a73e8; color: white; border: none; padding: 9px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; transition: background 0.2s, transform 0.1s; display: inline-block; }
+        button:hover, .btn:hover { background: #1557b0; }
+        button:active, .btn:active { transform: scale(0.97); }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+
+        /* Стрічка дописів */
+        .post-header { display: flex; align-items: center; margin-bottom: 12px; }
+        .post-avatar { width: 40px; height: 40px; background: #1a73e8; color: white; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 16px; overflow: hidden; }
+        .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .post-author { font-weight: bold; color: #202124; font-size: 15px; }
+        .post-time { font-size: 12px; color: #70757a; }
+        .post-content { font-size: 15px; color: #3c4043; line-height: 1.5; margin-bottom: 12px; word-break: break-word; }
+        .post-media { width: 100%; max-height: 350px; object-fit: cover; border-radius: 6px; margin-top: 8px; }
+
+        /* Адаптивність */
+        @media (max-width: 600px) {
+            header { padding: 10px 15px; }
+            header h1 { font-size: 18px; }
+            header .nav-links a { padding: 5px 8px; font-size: 12px; margin-left: 4px; }
+            .banner-container { height: 160px; }
+            .card { padding: 15px; }
         }
     </style>
 </head>
 <body>
 
+    <!-- Шапка сайту -->
+    <header>
+        <h1>Google+</h1>
+        <div class="nav-links">
+            {% if session.get('user_id') %}
+                <a href="{{ url_for('profile') }}">Profile</a>
+                <a href="{{ url_for('friends') }}">Friends</a>
+                <a href="{{ url_for('logout') }}" style="background: #c53929;">Log Out</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Log In</a>
+                <a href="{{ url_for('register') }}">Register</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Основний вміст -->
     <div class="container">
-        <h1>Google+ Возрождение</h1>
-        <p>Ето все таке случилось я закрываю проект Google+ Возрождение из за хейта про ИИ и ето да я все делаю через ИИ ведь я ещё не такой кодер в 11 лет.</p>
+        
+        <!-- Слайдер банерів з посиланнями на 2 та 3 слайди -->
+        <div class="banner-container">
+            {% if banners %}
+                <div class="slideshow" id="bannerSlideshow">
+                    {% for banner in banners %}
+                        {% if loop.index == 2 %}
+                            <a href="https://dalink.to/009518dd" target="_blank" class="banner-slide {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename='banners/' + banner) }}" alt="Banner 2">
+                            </a>
+                        {% elif loop.index == 3 %}
+                            <a href="https://t.me/nexustorvard" target="_blank" class="banner-slide {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename='banners/' + banner) }}" alt="Banner 3">
+                            </a>
+                        {% else %}
+                            <img src="{{ url_for('static', filename='banners/' + banner) }}" class="banner-slide {% if loop.first %}active{% endif %}" alt="Google+ Banner">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="banner-fallback">
+                    <span>Welcome to Google+ — Connect & Share</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Форма створення поста із JavaScript обробкою -->
+        {% if session.get('user_id') %}
+            <div class="card">
+                <form id="postForm" action="{{ url_for('add_post') }}" method="POST" enctype="multipart/form-data">
+                    <textarea id="postContent" name="content" placeholder="What's on your mind?..." required></textarea>
+                    <div class="post-form-footer">
+                        <input type="file" name="media" accept="image/*,video/*">
+                        <button type="submit" id="postBtn">Post</button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+
+        <!-- Стрічка дописів -->
+        <div class="posts-feed">
+            {% if posts %}
+                {% for post in posts %}
+                    <div class="card">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                {% if post.avatar and post.avatar != 'default.png' %}
+                                    <img src="{{ url_for('static', filename='avatars/' + post.avatar) }}" alt="Avatar">
+                                {% else %}
+                                    {{ post.username[0] | upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="post-author">{{ post.username }}</div>
+                                <div class="post-time">{{ post.timestamp }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="post-content">
+                            {{ post.content }}
+                        </div>
+
+                        {% if post.media_filename %}
+                            <div>
+                                {% if post.media_type == 'image' %}
+                                    <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" class="post-media" alt="Post Image">
+                                {% elif post.media_type == 'video' %}
+                                    <video controls class="post-media">
+                                        <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}">
+                                        Your browser does not support the video tag.
+                                   </video>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="card" style="text-align: center; color: #777;">
+                    <p>No posts available yet. Be the first to share something!</p>
+                </div>
+            {% endif %}
+        </div>
+
     </div>
+
+    <!-- JavaScript для слайдера банерів та інтерактивності кнопок -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Автоматичний слайдер банерів (кожні 3 секунди)
+            const slides = document.querySelectorAll('.banner-slide');
+            if (slides.length > 1) {
+                let currentIndex = 0;
+                setInterval(() => {
+                    slides[currentIndex].classList.remove('active');
+                    currentIndex = (currentIndex + 1) % slides.length;
+                    slides[currentIndex].classList.add('active');
+                }, 3000);
+            }
+
+            // 2. JavaScript обробник для кнопки публікації
+            const postForm = document.getElementById('postForm');
+            const postBtn = document.getElementById('postBtn');
+            const postContent = document.getElementById('postContent');
+
+            if (postForm && postBtn) {
+                postForm.addEventListener('submit', function(e) {
+                    if (!postContent.value.trim()) {
+                        e.preventDefault();
+                        alert("Please write something before posting!");
+                        return;
+                    }
+                    
+                    postBtn.innerText = "Posting...";
+                    postBtn.disabled = true;
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>
